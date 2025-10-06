@@ -22,7 +22,8 @@ function t_setup {
 
   # add unplugged
   mkdir -p $ZDOTDIR/.unplugged
-  cp ${0:A:h:h}/*.zsh $ZDOTDIR/.unplugged
+  cp ${0:A:h:h}/*.zsh $ZDOTDIR/.unplugged 2>/dev/null || true
+  cp ${0:A:h:h}/archive/*.zsh $ZDOTDIR/.unplugged 2>/dev/null || true
 }
 
 function t_teardown {

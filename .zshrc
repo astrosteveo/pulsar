@@ -14,11 +14,11 @@ set extended_glob
 ZSH=${ZSH:-${ZDOTDIR:-$HOME/.config/zsh}}
 ZSH_CUSTOM=${ZSH_CUSTOM:-$ZSH/custom}
 
-# Use antidote.lite - a Zsh micro plugin manager based on zsh_unplugged.
-if [[ ! -e $ZSH/lib/antidote.lite.zsh ]]; then
+# Use Pulsar - a Zsh micro plugin manager based on zsh_unplugged.
+if [[ ! -e $ZSH/lib/pulsar.zsh ]]; then
   mkdir -p $ZSH/lib
-  curl -fsSL -o $ZSH/lib/antidote.lite.zsh \
-    https://raw.githubusercontent.com/mattmc3/zsh_unplugged/main/antidote.lite.zsh
+  curl -fsSL -o $ZSH/lib/pulsar.zsh \
+    https://raw.githubusercontent.com/mattmc3/zsh_unplugged/main/pulsar.zsh
 fi
 
 # load any files in your lib directory

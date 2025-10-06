@@ -1,35 +1,34 @@
-# antidote.lite - a micro zsh plugin manager based on antidote and zsh_unplugged.
-# author:  mattmc3
+# Pulsar - a micro zsh plugin manager inspired by antidote and zsh_unplugged.
+# author:  mattmc3 (adapted for Pulsar)
 # home:    https://github.com/mattmc3/zsh_unplugged
-#          https://github.com/mattmc3/antidote
 # license: https://unlicense.org
 # usage:   plugin-load $myplugins
-# version: 0.0.4
+# version: 0.1.0
 
 # Set variables.
-: ${ANTIDOTE_LITE_HOME:=${XDG_CACHE_HOME:-~/.cache}/antidote.lite}
+: ${PULSAR_HOME:=${XDG_CACHE_HOME:-~/.cache}/pulsar}
 : ${ZPLUGINDIR:=${ZSH_CUSTOM:-${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}}/plugins}
-typeset -gHa _alite_zopts=(extended_glob glob_dots no_monitor)
+typeset -gHa _pulsar_zopts=(extended_glob glob_dots no_monitor)
 
 ##? Clone zsh plugins in parallel.
 function plugin-clone {
-  emulate -L zsh; setopt local_options $_alite_zopts
+  emulate -L zsh; setopt local_options $_pulsar_zopts
   local repo plugdir; local -Ua repos
 
   # Remove bare words ${(M)@:#*/*} and paths with leading slash ${@:#/*}.
   # Then split/join to keep the 2-part user/repo form to bulk-clone repos.
   for repo in ${${(M)@:#*/*}:#/*}; do
     repo=${(@j:/:)${(@s:/:)repo}[1,2]}
-    [[ -e $ANTIDOTE_LITE_HOME/$repo ]] || repos+=$repo
+    [[ -e $PULSAR_HOME/$repo ]] || repos+=$repo
   done
 
   for repo in $repos; do
-    plugdir=$ANTIDOTE_LITE_HOME/$repo
+    plugdir=$PULSAR_HOME/$repo
     if [[ ! -d $plugdir ]]; then
       echo "Cloning $repo..."
       (
         command git clone -q --depth 1 --recursive --shallow-submodules \
-          ${ANTIDOTE_LITE_GITURL:-https://github.com/}$repo $plugdir
+          ${PULSAR_GITURL:-https://github.com/}$repo $plugdir
         plugin-compile $plugdir
       ) &
     fi
@@ -44,7 +43,7 @@ function plugin-load {
 
 ##? Script loading of zsh plugins.
 function plugin-script {
-  emulate -L zsh; setopt local_options $_alite_zopts
+  emulate -L zsh; setopt local_options $_pulsar_zopts
 
   # parse args
   local kind  # kind=path,fpath
@@ -61,12 +60,12 @@ function plugin-script {
   (( ! $+functions[zsh-defer] )) || src="zsh-defer ."
   for plugin in $@; do
     if [[ -n "$kind" ]]; then
-      echo "$kind=(\$$kind $ANTIDOTE_LITE_HOME/$plugin)"
+      echo "$kind=(\$$kind $PULSAR_HOME/$plugin)"
     else
       inits=(
-        {$ZPLUGINDIR,$ANTIDOTE_LITE_HOME}/$plugin/${plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        $ANTIDOTE_LITE_HOME/$plugin/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        $ANTIDOTE_LITE_HOME/$plugin(N)
+        {$ZPLUGINDIR,$PULSAR_HOME}/$plugin/${plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
+        $PULSAR_HOME/$plugin/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
+        $PULSAR_HOME/$plugin(N)
         ${plugin}/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
         ${plugin}(N)
       )
@@ -81,9 +80,9 @@ function plugin-script {
 
 ##? Update plugins.
 function plugin-update {
-  emulate -L zsh; setopt local_options $_alite_zopts
+  emulate -L zsh; setopt local_options $_pulsar_zopts
   local plugdir oldsha newsha
-  for plugdir in $ANTIDOTE_LITE_HOME/*/*/.git(N/); do
+  for plugdir in $PULSAR_HOME/*/*/.git(N/); do
     plugdir=${plugdir:A:h}
     echo "Updating ${plugdir:h:t}/${plugdir:t}..."
     (
@@ -100,10 +99,10 @@ function plugin-update {
 
 ##? Compile plugins.
 function plugin-compile {
-  emulate -L zsh; setopt local_options $_alite_zopts
+  emulate -L zsh; setopt local_options $_pulsar_zopts
   autoload -Uz zrecompile
   local zfile
-  for zfile in ${1:-$ANTIDOTE_LITE_HOME}/**/*.zsh{,-theme}(N); do
+  for zfile in ${1:-$PULSAR_HOME}/**/*.zsh{,-theme}(N); do
     [[ $zfile != */test-data/* ]] || continue
     zrecompile -pq "$zfile"
   done
