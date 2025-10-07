@@ -277,8 +277,7 @@ function pulsar__get_latest_tag {
   tags=$(command git ls-remote --tags "$url" 2>/dev/null) || return 1
   [[ -n "$tags" ]] || return 1
   ts=$(print -r -- "$tags" \
-    | awk '{print $2}' \
-    | sed -E -e 's#refs/tags/##' -e 's/\^\{\}//' \
+    | awk '{ s=$2; sub(/^refs\/tags\//,"",s); gsub(/\^\{\}/,"",s); print s }' \
     | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$')
   [[ -n "$ts" ]] || return 1
   if (print -r -- "$ts" | command sort -V >/dev/null 2>&1); then
