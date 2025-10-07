@@ -18,10 +18,32 @@ typeset -g PULSAR_UPDATE_CHECK_INTERVAL=${PULSAR_UPDATE_CHECK_INTERVAL:-86400}  
 typeset -g PULSAR_UPDATE_NOTIFY=${PULSAR_UPDATE_NOTIFY:-1}  # 1=on, 0=off
 typeset -g PULSAR_REPO=${PULSAR_REPO:-"astrosteveo/pulsar"}  # owner/repo
 
+# Progress output: 1=on, 0=off, auto=on for TTY only
+typeset -g PULSAR_PROGRESS=${PULSAR_PROGRESS:-auto}
+# Color output: auto=TTY only, 1=force, 0=off
+typeset -g PULSAR_COLOR=${PULSAR_COLOR:-auto}
 # Update notifier cache/state helpers
 pulsar__cache_dir() { print -r -- "${XDG_CACHE_HOME:-$HOME/.cache}/pulsar"; }
 pulsar__state_file() { print -r -- "$(pulsar__cache_dir)/update_state"; }
 pulsar__now() { print -r -- ${EPOCHSECONDS:-$(date +%s)}; }
+
+# Progress/color helpers
+pulsar__isatty() { [[ -t 1 ]]; }
+pulsar__progress_on() {
+  local v=${PULSAR_PROGRESS:-auto}
+  [[ $v == 1 || ( $v == auto && $(pulsar__isatty; print $?) -eq 0 ) ]]
+}
+pulsar__color_on() {
+  local v=${PULSAR_COLOR:-auto}
+  [[ $v == 1 || ( $v == auto && $(pulsar__isatty; print $?) -eq 0 ) ]]
+}
+pulsar__cecho() {
+  # usage: pulsar__cecho "text" [color_code]
+  # color_code default 36 (cyan)
+  pulsar__progress_on || return 0
+  local msg=$1 col=${2:-36}
+  if pulsar__color_on; then print -r -- "\e[${col}m$msg\e[0m"; else print -r -- "$msg"; fi
+}
 
 ##? Clone zsh plugins in parallel.
 function plugin-clone {
@@ -29,6 +51,7 @@ function plugin-clone {
   local spec repo ref plugdir processed_repo repo_part r
   local -A refmap
   local -Ua allrepos repos
+  local -i installed_count=0 updated_count=0
 
   # Ensure base directory exists
   [[ -d $PULSAR_HOME ]] || command mkdir -p -- $PULSAR_HOME
@@ -65,8 +88,18 @@ function plugin-clone {
   # Clone missing repos
   for r in $repos; do
     plugdir=$PULSAR_HOME/$r
+    # progress message per repo
+    local action=""
     if [[ ! -d $plugdir ]]; then
-      echo "Cloning $r..."
+      action="Installing"
+    elif [[ -d $plugdir/.git ]]; then
+      action="Updating"
+    else
+      action="Preparing"
+    fi
+    pulsar__cecho "Pulsar: $action $r" 36
+    [[ $action == "Installing" ]] && (( installed_count++ ))
+    if [[ ! -d $plugdir ]]; then
       (
         command mkdir -p -- ${plugdir:h}
         local url="${PULSAR_GITURL:-https://github.com/}${r}.git"
@@ -91,6 +124,8 @@ function plugin-clone {
   local existing
   for existing in ${(u)allrepos}; do
     if [[ -d $PULSAR_HOME/$existing && -n ${refmap[$existing]-} ]]; then
+      pulsar__cecho "Pulsar: Updating $existing" 36
+      (( updated_count++ ))
       (
         plugdir=$PULSAR_HOME/$existing
         local _ref=${refmap[$existing]}
@@ -101,6 +136,9 @@ function plugin-clone {
     fi
   done
   wait
+  if pulsar__progress_on; then
+    (( installed_count + updated_count )) && pulsar__cecho "Pulsar: ${installed_count} installed, ${updated_count} updated" 32
+  fi
 }
 
 ##? Load zsh plugins.
@@ -240,7 +278,7 @@ function pulsar__get_latest_tag {
   [[ -n "$tags" ]] || return 1
   ts=$(print -r -- "$tags" \
     | awk '{print $2}' \
-    | sed -e 's#refs/tags/##' -e 's/\^\{\}//' \
+    | sed -E -e 's#refs/tags/##' -e 's/\^\{\}//' \
     | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$')
   [[ -n "$ts" ]] || return 1
   if (print -r -- "$ts" | command sort -V >/dev/null 2>&1); then

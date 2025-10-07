@@ -146,6 +146,19 @@ Update notifier variables:
 - `PULSAR_UPDATE_NOTIFY` – 0/1
 - `PULSAR_REPO` – owner/repo
 
+### Progress output
+
+- `PULSAR_PROGRESS` – auto|1|0
+  - auto: show progress only when stdout is a TTY
+  - 1: always show progress
+  - 0: never print progress
+- `PULSAR_COLOR` – auto|1|0
+  - auto: color only on TTY
+  - 1: force color
+  - 0: no color
+
+Defaults: `PULSAR_PROGRESS=auto`, `PULSAR_COLOR=auto`.
+
 Example:
 
 ```zsh
