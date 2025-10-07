@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 ## [Unreleased]
 
+## [0.3.1] - 2025-10-07
+
+### Fixed
+
+- VS Code terminal sourcing: treat `ZDOTDIR=$HOME` as unset when computing install prefix and deciding whether to install the shim, so `$HOME/lib/pulsar-bootstrap.zsh` is never referenced. Compute `ZSH` in the inserted block to prefer XDG path when `ZDOTDIR=$HOME`.
+
 ## [0.3.0] - 2025-10-07
 
 ### Changed
@@ -45,7 +51,8 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 - Initial Pulsar extraction and documentation.
 
-[Unreleased]: https://github.com/astrosteveo/pulsar/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/astrosteveo/pulsar/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/astrosteveo/pulsar/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/astrosteveo/pulsar/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/astrosteveo/pulsar/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/astrosteveo/pulsar/commits/main

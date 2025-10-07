@@ -42,6 +42,10 @@ What this does:
   - The shim is wrapped with markers `# >>> pulsar-zdotdir-shim >>>` and `# <<< pulsar-zdotdir-shim <<<` and is maintained idempotently.
   - The shim is only installed if ZDOTDIR is already present; Pulsar does not set ZDOTDIR for you.
 
+Best practice:
+
+- If you want Pulsar to manage configuration outside of `~/.zshrc`, set `ZDOTDIR` to an explicit directory (for example, `${XDG_CONFIG_HOME:-$HOME/.config}/zsh`). If you set `ZDOTDIR=$HOME`, Pulsar treats that as effectively unset and falls back to the XDG default path.
+
 Installer source: [install.sh](install.sh:1)
 
 ## ✨ Features
