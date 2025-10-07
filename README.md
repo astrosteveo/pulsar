@@ -29,6 +29,7 @@ What this does:
   - `# >>> pulsar >>>`
   - `# <<< pulsar <<<`
 - Backs up files before changes
+- Removes legacy Pulsar bootstrap from `~/.zshrc` (old non-guarded blocks, raw curl lines, and `source $ZSH/lib/pulsar.zsh`) to keep it clean
 - Supports stable/edge channels via `--channel`
 
 Installer source: [install.sh](install.sh:1)

@@ -119,13 +119,25 @@ if [ -f "$zshrc" ] && grep -q "^# >>> pulsar >>>\$" "$zshrc"; then
   had_block=1
 fi
 
-# Filter out any existing pulsar block
+# Filter out any existing pulsar block and legacy bootstrap
+legacy_flag="${tmp_zshrc}.legacy_removed"
+rm -f -- "$legacy_flag" 2>/dev/null || true
 if [ -f "$zshrc" ]; then
-  awk -v start="$start_marker" -v end="$end_marker" '
-    BEGIN{inblk=0}
-    $0==start{inblk=1; next}
-    inblk==1 && $0==end{inblk=0; next}
-    inblk==0{print}
+  awk -v start1="# Setup vars" -v start2="# Download Pulsar if needed" -v start3="# Declarative config" \
+      -v endrx="^source[[:space:]]\\$ZSH/lib/pulsar\\.zsh$" \
+      -v gbeg="$start_marker" -v gend="$end_marker" -v flagfile="$legacy_flag" '
+    BEGIN{inblk=0; inlegacy=0; removed=0}
+    $0==gbeg { inblk=1; next }
+    inblk==1 && $0==gend { inblk=0; next }
+    ($0==start1 || $0==start2 || $0==start3) { inlegacy=1; removed=1; next }
+    inlegacy==1 {
+      if ($0 ~ endrx) { inlegacy=0; next }
+      next
+    }
+    $0 ~ /curl .*raw\\.githubusercontent\\.com\\/.*\\/pulsar\\.zsh/ { removed=1; next }
+    $0 ~ /^source[[:space:]]\\$ZSH\\/lib\\/pulsar\\.zsh$/ { removed=1; next }
+    { print }
+    END { if (removed) { print "1" > flagfile } }
   ' "$zshrc" >"$tmp_zshrc"
 else
   : >"$tmp_zshrc"
@@ -136,6 +148,12 @@ if [ -s "$tmp_zshrc" ]; then
   printf '\n' >>"$tmp_zshrc"
 fi
 printf '%s\n' "$BLOCK" >>"$tmp_zshrc"
+
+# Notify if legacy content was removed
+if [ -f "$legacy_flag" ]; then
+  printf '%s\n' "Removed legacy Pulsar bootstrap from ~/.zshrc"
+  rm -f -- "$legacy_flag"
+fi
 
 # Only modify ~/.zshrc if content changed; single backup only on first insertion
 if [ -f "$zshrc" ]; then
