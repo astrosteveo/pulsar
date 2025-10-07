@@ -6,10 +6,18 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 ## [Unreleased]
 
+No unreleased changes yet.
+
+## [0.2.0] - 2025-10-06
+
 ### Added
 
 - Declarative autorun mode: configure plugins via `PULSAR_PLUGINS`, `PULSAR_PATH`, and `PULSAR_FPATH`; optional `PULSAR_AUTORUN`, `PULSAR_NO_AUTORUN`, and `PULSAR_AUTOCOMPILE` controls.
-- Quick Start uses declarative setup; manual mode retained for full control.
+- Pinning support for `repo@ref` (branch/tag/commit) in `plugin-clone`.
+- Prefer `$plugin/bin` for `plugin-load --kind path` when available.
+- `PULSAR_FORCE_RECLONE` to force re-clone on demand.
+- `pulsar-doctor` for quick environment checks.
+- New `examples/pulsar_declarative.zsh` and simple `Makefile` with `test` and `release` targets.
 - README polish with badges, examples, and clarified configuration.
 
 ### Changed
@@ -24,5 +32,6 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 - Initial Pulsar extraction and documentation.
 
-[Unreleased]: https://github.com/astrosteveo/pulsar/compare/main...HEAD
+[Unreleased]: https://github.com/astrosteveo/pulsar/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/astrosteveo/pulsar/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/astrosteveo/pulsar/commits/main
