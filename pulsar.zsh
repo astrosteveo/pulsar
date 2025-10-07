@@ -24,8 +24,11 @@ function plugin-clone {
   for spec in ${${(M)@:#*/*}:#/*}; do
     ref=${spec##*@}
     repo=${spec%@*}
-    repo=${(@j:/:)${(@s:/:)repo}[1,2]}
-    allrepos+=$repo
+    # Process each repository individually by splitting on spaces first
+     for repo_part in ${(s: :)repo}; do
+       processed_repo=${(@j:/:)${(@s:/:)repo_part}[1,2]}
+       allrepos+=$processed_repo
+    
     # store ref only if actually provided with '@'
     if [[ $spec == *"@"* || ${spec#*@} != $spec ]]; then
       refmap[$repo]=$ref
