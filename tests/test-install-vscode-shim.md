@@ -19,13 +19,11 @@ Create temp HOME and run installer
 %
 ```
 
-Ensure ZDOTDIR and files are created
+Ensure ZDOTDIR files are created (when ZDOTDIR is already set by the environment)
 
 ```zsh
 % echo ${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh} | substenv ZDOTDIR | substenv XDG_CONFIG_HOME | substenv HOME
 $ZDOTDIR
-% test -f $TEST_HOME/.zshenv && grep -q 'export ZDOTDIR=' $TEST_HOME/.zshenv && echo ok
-ok
 % test -f $ZDOTDIR/.zshrc && echo ok
 ok
 % test -f $ZDOTDIR/lib/pulsar-bootstrap.zsh && echo ok

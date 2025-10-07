@@ -29,31 +29,19 @@ if ! command -v curl >/dev/null 2>&1; then
   curl_present=0
 fi
 
-# Determine target ZDOTDIR path (used for bootstrapper)
+##### Determine whether to honor ZDOTDIR
+# Policy: Do not set or export ZDOTDIR. Only honor it if the user already has it set.
 ZDOTDIR_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-# If ZDOTDIR is already set in the environment, honor it; otherwise default
+honor_zdotdir=0
+if [ -n "${ZDOTDIR:-}" ]; then
+  honor_zdotdir=1
+elif [ -f "$HOME/.zshenv" ] && grep -Eq '^export[[:space:]]+ZDOTDIR=' "$HOME/.zshenv"; then
+  honor_zdotdir=1
+fi
+# For asset placement, prefer the honored ZDOTDIR when set, otherwise fallback to XDG default
 target_zdotdir="${ZDOTDIR:-$ZDOTDIR_DEFAULT}"
 
-# Ensure .zshenv exports ZDOTDIR, unless disabled (idempotent: append once, single backup)
-zshenv="$HOME/.zshenv"
-if [ "$no_zdotdir" -ne 1 ]; then
-  line='export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"'
-  if [ -f "$zshenv" ]; then
-    if grep -Eq '^export[[:space:]]+ZDOTDIR=' "$zshenv"; then
-      : # ZDOTDIR already managed by user or previous run
-    elif grep -Fxq "$line" "$zshenv"; then
-      : # exact line already present
-    else
-      ts="$(date -u +%Y%m%d%H%M%S)"
-      cp -- "$zshenv" "$zshenv.pulsar.bak.$ts" 2>/dev/null || cp "$zshenv" "$zshenv.pulsar.bak.$ts"
-      printf '%s\n' "$line" >>"$zshenv"
-      printf '%s\n' "Updated ~/.zshenv ZDOTDIR"
-    fi
-  else
-    printf '%s\n' "$line" >"$zshenv"
-    printf '%s\n' "Updated ~/.zshenv ZDOTDIR"
-  fi
-fi
+# Do NOT modify ~/.zshenv. We only honor existing ZDOTDIR; we never set it.
 
 # Create ZDOTDIR/lib
 mkdir -p -- "$target_zdotdir/lib" 2>/dev/null || mkdir -p "$target_zdotdir/lib"
@@ -119,7 +107,7 @@ EOF
 )
 
 ## Decide which zshrc to manage as the primary file
-if [ "$no_zdotdir" -ne 1 ]; then
+if [ "$honor_zdotdir" -eq 1 ]; then
   zshrc="$target_zdotdir/.zshrc"
 else
   zshrc="$HOME/.zshrc"
@@ -180,11 +168,9 @@ else
   printf '%s\n' "Inserted pulsar block into ~/.zshrc"
 fi
 
-# If ZDOTDIR is managed (by us) OR user has exported it in ~/.zshenv, add a VS Code compatibility shim in ~/.zshrc
+# Add a VS Code compatibility shim in ~/.zshrc only when ZDOTDIR is honored
 need_shim=0
-if [ "$no_zdotdir" -ne 1 ]; then
-  need_shim=1
-elif [ -f "$HOME/.zshenv" ] && grep -Eq '^export[[:space:]]+ZDOTDIR=' "$HOME/.zshenv"; then
+if [ "$honor_zdotdir" -eq 1 ]; then
   need_shim=1
 fi
 if [ "$need_shim" -eq 1 ]; then
