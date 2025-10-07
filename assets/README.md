@@ -32,14 +32,15 @@ Recipe: asciinema → GIF (recommended)
 asciinema rec -c "zsh -f" assets/pulsar-demo.cast
 
 # 2) Render to GIF with agg (https://github.com/asciinema/agg)
-#    brew install asciinema; brew install agg  # macOS
-#    or download binaries from the agg releases page
-agg -i assets/pulsar-demo.cast \
-      -o assets/pulsar-demo.gif \
+#    macOS: brew install asciinema agg
+#    Linux: pacman -S asciinema (Arch) and download agg from releases, or use your package manager
+#    Note: agg v1.6+ uses positional args: agg <input.cast> <output.gif>
+agg assets/pulsar-demo.cast assets/pulsar-demo.gif \
       --font-size 16 \
-      --theme dracula \
-      --scale 1.0 \
-      --fps 10
+      --theme dracula
+
+# Optional: if the file is big, optimize
+gifsicle -O3 --lossy=20 -o assets/pulsar-demo.gif assets/pulsar-demo.gif
 ```
 
 Recipe: screen recorder → MP4 → optimized GIF
@@ -86,5 +87,5 @@ Checklist
 
 Notes
 
-- If size exceeds ~2MB, reduce fps to 8–10 and/or width to ~900–1000 px; apply gifsicle `--lossy`.
+- If size exceeds ~2MB, prefer optimizing with gifsicle first. If still large, reduce terminal width before recording (cast inherits cols/rows), or re-render at a smaller window size.
 - Prefer declarative arrays that yield visible effects (autosuggestions, syntax-highlighting, prompt init).
