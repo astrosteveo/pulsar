@@ -307,6 +307,34 @@ function pulsar__get_main_sha {
   command git ls-remote "https://github.com/${PULSAR_REPO}.git" refs/heads/main 2>/dev/null | awk '{print $1}'
 }
 
+function pulsar__version_compare {
+  # Compare two version strings (v1.2.3 format)
+  # Returns 0 if v1 < v2 (v2 is newer)
+  # Returns 1 if v1 >= v2 (v1 is same or newer)
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local v1="$1" v2="$2"
+  
+  # Strip leading 'v' if present
+  v1="${v1#v}"
+  v2="${v2#v}"
+  
+  # If versions are identical, v2 is not newer
+  [[ "$v1" == "$v2" ]] && return 1
+  
+  # Use sort -V to compare versions
+  local sorted
+  if sorted=$(printf "%s\n%s\n" "$v1" "$v2" | command sort -V 2>/dev/null); then
+    local first_line="${sorted%%$'\n'*}"
+    # If v1 comes first in sorted order, then v1 < v2, so v2 is newer
+    [[ "$first_line" == "$v1" ]] && return 0
+    return 1
+  else
+    # Fallback to lexicographic comparison if sort -V not available
+    [[ "$v1" < "$v2" ]] && return 0
+    return 1
+  fi
+}
+
 function pulsar__notify_stable {
   emulate -L zsh; setopt local_options $_pulsar_zopts
   local current="$1" latest="$2"
@@ -369,7 +397,8 @@ function pulsar__check_update {
     stable)
       local latest
       latest="$(pulsar__get_latest_tag)" || latest=""
-      if [[ -n "$latest" && "$latest" != "$PULSAR_VERSION" ]]; then
+      # Only notify if latest is non-empty and is actually newer than current version
+      if [[ -n "$latest" ]] && pulsar__version_compare "$PULSAR_VERSION" "$latest"; then
         pulsar__notify_stable "$PULSAR_VERSION" "$latest"
         _pstate[last_seen_stable_tag]="$latest"
       fi

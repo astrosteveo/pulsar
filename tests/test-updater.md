@@ -83,6 +83,48 @@ ok
 %
 ```
 
+Version comparison: no notification when local version is newer than remote
+
+```zsh
+% export TEST_HOME=$T_TEMPDIR/home6
+% mkdir -p $TEST_HOME
+% export XDG_CACHE_HOME=$T_TEMPDIR/.cache6
+% export PULSAR_UPDATE_NOTIFY=1 PULSAR_UPDATE_CHANNEL=stable PULSAR_UPDATE_CHECK_INTERVAL=0
+% export PULSAR_VERSION=v99.99.99
+% function pulsar__get_latest_tag { echo v0.3.2 }
+% ZDOTDIR=$ZDOTDIR HOME=$TEST_HOME zsh -fc 'source ./pulsar.zsh; echo done' | grep -q "Pulsar update available" || echo ok
+ok
+%
+```
+
+Version comparison: notification when local version is older than remote
+
+```zsh
+% export TEST_HOME=$T_TEMPDIR/home7
+% mkdir -p $TEST_HOME
+% export XDG_CACHE_HOME=$T_TEMPDIR/.cache7
+% export PULSAR_UPDATE_NOTIFY=1 PULSAR_UPDATE_CHANNEL=stable PULSAR_UPDATE_CHECK_INTERVAL=0
+% export PULSAR_VERSION=v0.1.0
+% function pulsar__get_latest_tag { echo v0.3.2 }
+% ZDOTDIR=$ZDOTDIR HOME=$TEST_HOME zsh -fc 'source ./pulsar.zsh' | grep -q "Pulsar update available" && echo ok
+ok
+%
+```
+
+Version comparison: no notification when versions are equal
+
+```zsh
+% export TEST_HOME=$T_TEMPDIR/home8
+% mkdir -p $TEST_HOME
+% export XDG_CACHE_HOME=$T_TEMPDIR/.cache8
+% export PULSAR_UPDATE_NOTIFY=1 PULSAR_UPDATE_CHANNEL=stable PULSAR_UPDATE_CHECK_INTERVAL=0
+% export PULSAR_VERSION=v0.3.2
+% function pulsar__get_latest_tag { echo v0.3.2 }
+% ZDOTDIR=$ZDOTDIR HOME=$TEST_HOME zsh -fc 'source ./pulsar.zsh; echo done' | grep -q "Pulsar update available" || echo ok
+ok
+%
+```
+
 ## Teardown
 
 ```zsh
