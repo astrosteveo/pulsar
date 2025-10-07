@@ -6,7 +6,15 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 ## [Unreleased]
 
-No unreleased changes yet.
+### Removed
+- Legacy root files: .zshrc, debug_pulsar.zsh, unplugged.zsh, zsh_unplugged.zsh
+- Directories: archive/, zsh_unplugged/
+- Tests: tests/test-unplugged.md, tests/test-zsh-unplugged.md
+
+### Changed
+- README: add Quick Start (no root .zshrc) and document update notifier variables
+- Assets: align demo instructions with Quick Start
+- Tests: remove legacy references in remaining test scaffolding
 
 ## [0.2.0] - 2025-10-06
 

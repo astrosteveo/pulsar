@@ -1,4 +1,4 @@
-# test-zsh-unplugged
+# test-advanced-zshrc
 
 ## Setup
 

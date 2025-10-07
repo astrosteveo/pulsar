@@ -7,9 +7,9 @@ Goal: a crisp, <15s loop showing “copy Quick Start → first-run auto-clone/lo
 What to show
 
 - Temporary config dir (clean env)
-- Download pulsar.zsh
-- Define PULSAR_* arrays (declarative)
-- source pulsar.zsh (first run clones; second run is instant)
+- Clone Pulsar into XDG config: ${XDG_CONFIG_HOME:-$HOME/.config}/zsh/pulsar
+- Source pulsar.zsh from that path
+- Copy the Quick Start snippet from README
 - One quick proof the plugin works (e.g., zsh-bench on PATH or prompt init)
 
 General tips
@@ -61,19 +61,24 @@ Suggested recording script (for the session you record)
 ```zsh
 # Clean, reproducible session
 TMPDIR=$(mktemp -d)
-export ZSH="$TMPDIR/zsh"
-mkdir -p "$ZSH/lib"
+CFG="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+mkdir -p "$CFG"
 
-# Download Pulsar
-curl -fsSL -o "$ZSH/lib/pulsar.zsh" \
-   https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh
+# Clone Pulsar once (if not already)
+if [[ ! -d "$CFG/pulsar/.git" ]]; then
+  git clone https://github.com/astrosteveo/pulsar "$CFG/pulsar"
+fi
 
-# Declarative config
+# Optional demo config
+export PULSAR_UPDATE_CHANNEL=stable
+export PULSAR_UPDATE_CHECK_INTERVAL=86400
+export PULSAR_UPDATE_NOTIFY=1
+export PULSAR_REPO="astrosteveo/pulsar"
 PULSAR_PLUGINS=(zsh-users/zsh-autosuggestions zsh-users/zsh-syntax-highlighting)
 PULSAR_AUTOCOMPILE=1
 
 # First run: clones + loads
-source "$ZSH/lib/pulsar.zsh"
+source "$CFG/pulsar/pulsar.zsh"
 
 # Optional: show it’s instant the second time
 exec zsh -i

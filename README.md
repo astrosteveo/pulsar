@@ -21,39 +21,29 @@
 
 ## 🚀 Quick Start
 
-Add this to your `.zshrc` (declarative, no manual clone/load needed):
+Add this to your `~/.zshrc` (no root .zshrc in repo):
 
 ```zsh
-# Setup vars
-ZSH=${ZSH:-${ZDOTDIR:-$HOME/.config/zsh}}
+# ~/.zshrc starter (example)
+export PULSAR_UPDATE_CHANNEL=stable
+export PULSAR_UPDATE_CHECK_INTERVAL=86400
+export PULSAR_UPDATE_NOTIFY=1
+export PULSAR_REPO="astrosteveo/pulsar"
 
-# Download Pulsar if needed
-if [[ ! -e $ZSH/lib/pulsar.zsh ]]; then
-  mkdir -p $ZSH/lib
-  curl -fsSL -o $ZSH/lib/pulsar.zsh \
-    https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh
-fi
+# clone once (choose a location you manage, e.g. XDG config)
+# git clone https://github.com/astrosteveo/pulsar "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/pulsar"
 
-# Declarative plugins
-PULSAR_PATH=(
-  # put executables on PATH
-  # romkatv/zsh-bench
-)
-PULSAR_FPATH=(
-  # prompts/completions into fpath
-  # sindresorhus/pure
-)
-PULSAR_PLUGINS=(
+# load Pulsar
+source "${XDG_CONFIG_HOME:-$HOME/.config}/zsh/pulsar/pulsar.zsh"
+
+# declare plugins
+myplugins=(
   zsh-users/zsh-completions
   zsh-users/zsh-autosuggestions
   zsh-users/zsh-syntax-highlighting
+  romkatv/zsh-bench
+  sindresorhus/pure
 )
-
-# Optional: speed up startup by compiling after load
-PULSAR_AUTOCOMPILE=1
-
-# Load Pulsar (auto-clones/auto-loads based on arrays above)
-source $ZSH/lib/pulsar.zsh
 ```
 
 That's it. Restart your shell and you're done.
@@ -150,6 +140,12 @@ Pulsar respects these environment variables:
 - `PULSAR_NO_AUTORUN` – Disable autorun even if arrays are set
 - `PULSAR_AUTOCOMPILE` – If set, run `plugin-compile` after loading
 
+Update notifier variables:
+- `PULSAR_UPDATE_CHANNEL` – stable|edge|off
+- `PULSAR_UPDATE_CHECK_INTERVAL` – seconds
+- `PULSAR_UPDATE_NOTIFY` – 0/1
+- `PULSAR_REPO` – owner/repo
+
 Example:
 
 ```zsh
@@ -231,7 +227,6 @@ Pulsar takes a different approach:
 
 - [examples/pulsar_declarative.zsh](examples/pulsar_declarative.zsh) – Declarative, auto-load setup
 - [examples/pulsar_example.zsh](examples/pulsar_example.zsh) – Full-featured manual configuration
-- [archive/examples/](archive/examples/) – Legacy setups preserved for reference
 
 ## 🗂️ Project structure
 
@@ -241,15 +236,12 @@ Pulsar takes a different approach:
 ├── README.md                     # 📖 This document
 ├── LICENSE                       # 📜 Unlicense (public domain)
 ├── examples/
+│   ├── pulsar_declarative.zsh    # 🧭 Declarative Pulsar example
 │   └── pulsar_example.zsh        # 💡 Full-featured Pulsar example
 ├── tests/
 │   ├── __init__.zsh              # 🧪 Test setup
 │   ├── test-pulsar.md            # ✅ Pulsar-specific tests
-│   ├── test-unplugged.md         # 📝 Legacy unplugged tests
-│   ├── test-zsh-unplugged.md     # 📝 Legacy zsh_unplugged tests
 │   └── test-advanced-zshrc.md    # 📝 Advanced config tests
-└── archive/                      # �️ Legacy materials (if present)
-  └── ...
 ```
 
 ## 📈 Future ideas
@@ -268,7 +260,6 @@ Pulsar takes a different approach:
 
 Pulsar builds on ideas from and acknowledges:
 
-- zsh_unplugged – The original minimal approach
 - [antidote](https://github.com/mattmc3/antidote) – Fast, functional plugin management
 - [antibody](https://github.com/getantibody/antibody) – Parallel cloning inspiration
 - The Zsh community – For creating amazing plugins

@@ -11,7 +11,7 @@ function t_setup {
   # function git { echo git "$@" }
 
   # works with BSD and GNU gmktemp
-  T_TEMPDIR=${$(mktemp -d -t zsh_unplugged.XXXXXXXX):A}
+  T_TEMPDIR=${$(mktemp -d -t pulsar.XXXXXXXX):A}
 
   # put zdotdir in position
   mkdir -p $T_TEMPDIR/plugins
@@ -22,9 +22,6 @@ function t_setup {
   typeset -g OLD_XDG_CACHE_HOME=$XDG_CACHE_HOME
   export XDG_CACHE_HOME=$T_TEMPDIR/.cache
 
-  # add legacy shims into $ZDOTDIR/.unplugged
-  mkdir -p $ZDOTDIR/.unplugged
-  cp ${0:A:h:h}/*.zsh $ZDOTDIR/.unplugged 2>/dev/null || true
 }
 
 function t_teardown {
@@ -36,7 +33,7 @@ function t_teardown {
   export ZDOTDIR=$OLD_ZDOTDIR
   export XDG_DATA_HOME=$OLD_XDG_DATA_HOME
   export XDG_CACHE_HOME=$OLD_XDG_CACHE_HOME
-  unset ZPLUGINDIR ZUNPLUG_CUSTOM ZUNPLUG_REPOS
+  unset ZPLUGINDIR
 
   # restore original fpath
   fpath=( $T_PREV_FPATH )

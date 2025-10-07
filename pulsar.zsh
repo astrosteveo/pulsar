@@ -1,6 +1,6 @@
-# Pulsar - a micro zsh plugin manager inspired by antidote and zsh_unplugged.
+# Pulsar - a micro zsh plugin manager inspired by antidote.
 # author:  mattmc3 (adapted for Pulsar)
-# home:    https://github.com/mattmc3/zsh_unplugged
+# home:    https://github.com/astrosteveo/pulsar
 # license: https://unlicense.org
 # usage:   plugin-load $myplugins
 # version: 0.1.0
@@ -230,10 +230,6 @@ function pulsar__write_state {
   command mv -f -- "$tmp" "$f" 2>/dev/null || true
 }
 
-# Trigger update check after initialization
-if (( PULSAR_UPDATE_NOTIFY )); then
-  pulsar__check_update
-fi
 
 function pulsar__get_latest_tag {
   emulate -L zsh; setopt local_options $_pulsar_zopts
@@ -363,3 +359,8 @@ function pulsar__check_update {
     [[ -n ${PULSAR_AUTOCOMPILE-} ]] && plugin-compile
   fi
 }
+
+# Trigger update check after initialization
+if (( PULSAR_UPDATE_NOTIFY )); then
+  pulsar__check_update
+fi
