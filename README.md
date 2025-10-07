@@ -25,7 +25,7 @@ ZSH=${ZSH:-${ZDOTDIR:-$HOME/.config/zsh}}
 if [[ ! -e $ZSH/lib/pulsar.zsh ]]; then
   mkdir -p $ZSH/lib
   curl -fsSL -o $ZSH/lib/pulsar.zsh \
-    https://raw.githubusercontent.com/astrosteveo/zsh_unplugged/main/pulsar.zsh
+    https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh
 fi
 
 # Load Pulsar
@@ -45,50 +45,6 @@ plugin-load $plugins
 ```
 
 That's it. Restart your shell and you're done.
-
-## � Quick Reference
-
-### Core functions
-
-| Function | Description | Example |
-|----------|-------------|---------|
-| `plugin-clone` | Clone plugins in parallel | `plugin-clone user/repo` |
-| `plugin-load` | Source a plugin (optionally adds to `path`/`fpath`) | `plugin-load user/repo` |
-| `plugin-load --kind path` | Add executables to your `PATH` | `plugin-load --kind path romkatv/zsh-bench` |
-| `plugin-load --kind fpath` | Add completions/prompts to `fpath` | `plugin-load --kind fpath sindresorhus/pure` |
-| `plugin-update` | Pull the latest for every cloned plugin | `plugin-update` |
-| `plugin-compile` | Compile plugins with `zrecompile` for faster loads | `plugin-compile` |
-
-### Minimal `.zshrc`
-
-```zsh
-source ~/.config/zsh/lib/pulsar.zsh
-plugin-clone zsh-users/zsh-autosuggestions zsh-users/zsh-syntax-highlighting
-plugin-load  zsh-users/zsh-autosuggestions zsh-users/zsh-syntax-highlighting
-```
-
-### Full-featured `.zshrc`
-
-```zsh
-source ~/.config/zsh/lib/pulsar.zsh
-
-utils=(romkatv/zsh-bench)
-prompts=(sindresorhus/pure)
-plugins=(
-  zsh-users/zsh-completions
-  zsh-users/zsh-autosuggestions
-  zsh-users/zsh-syntax-highlighting
-)
-
-plugin-clone $utils $prompts $plugins
-
-plugin-load --kind path $utils
-plugin-load --kind fpath $prompts
-plugin-load $plugins
-
-autoload -U promptinit; promptinit
-prompt pure
-```
 
 ## 🧠 Usage Patterns
 
@@ -237,122 +193,6 @@ Pulsar takes a different approach:
 2. **Stable** – Simple code means fewer bugs and no surprises
 3. **Performant** – Parallel operations and compilation without complexity
 4. **Self-sufficient** – Copy `pulsar.zsh` anywhere and you're done
-
-## � Migration guides
-
-### From antidote.lite
-
-#### What changed
-
-- `antidote.lite.zsh` → `pulsar.zsh`
-- `ANTIDOTE_LITE_*` environment variables → `PULSAR_*`
-- Cache directory moves from `~/.cache/antidote.lite` to `~/.cache/pulsar`
-
-#### Migration steps
-
-Use the compatibility shim (recommended):
-
-```diff
-- curl -fsSL -o $ZSH/lib/antidote.lite.zsh \
--   https://raw.githubusercontent.com/mattmc3/zsh_unplugged/main/antidote.lite.zsh
-+ curl -fsSL -o $ZSH/lib/pulsar.zsh \
-+   https://raw.githubusercontent.com/astrosteveo/zsh_unplugged/main/pulsar.zsh
-
-- source $ZSH/lib/antidote.lite.zsh
-+ source $ZSH/lib/pulsar.zsh
-```
-
-If you customised the environment, update the variable names:
-
-```diff
-- export ANTIDOTE_LITE_HOME=~/.local/share/antidote.lite
-+ export PULSAR_HOME=~/.local/share/pulsar
-
-- export ANTIDOTE_LITE_GITURL=https://mirror.example.com/
-+ export PULSAR_GITURL=https://mirror.example.com/
-```
-
-#### Complete example
-
-```zsh
-# Before (antidote.lite)
-if [[ ! -e $ZSH/lib/antidote.lite.zsh ]]; then
-  mkdir -p $ZSH/lib
-  curl -fsSL -o $ZSH/lib/antidote.lite.zsh \
-    https://raw.githubusercontent.com/mattmc3/zsh_unplugged/main/antidote.lite.zsh
-fi
-export ANTIDOTE_LITE_HOME=~/.local/share/antidote.lite
-source $ZSH/lib/antidote.lite.zsh
-plugins=(zsh-users/zsh-autosuggestions zsh-users/zsh-syntax-highlighting)
-plugin-clone $plugins
-plugin-load  $plugins
-
-# After (Pulsar)
-if [[ ! -e $ZSH/lib/pulsar.zsh ]]; then
-  mkdir -p $ZSH/lib
-  curl -fsSL -o $ZSH/lib/pulsar.zsh \
-    https://raw.githubusercontent.com/astrosteveo/zsh_unplugged/main/pulsar.zsh
-fi
-export PULSAR_HOME=~/.local/share/pulsar
-source $ZSH/lib/pulsar.zsh
-plugins=(zsh-users/zsh-autosuggestions zsh-users/zsh-syntax-highlighting)
-plugin-clone $plugins
-plugin-load  $plugins
-```
-
-### From zsh_unplugged
-
-Pulsar splits cloning and loading into two functions and adds update/compile helpers:
-
-```diff
-- source zsh_unplugged.zsh
-- plugin-load $plugins
-+ source pulsar.zsh
-+ plugin-clone $plugins   # optional – clones in parallel
-+ plugin-load  $plugins
-```
-
-Use separate lists to control when things land on `PATH` versus `fpath`.
-
-### From Oh-My-Zsh plugin management
-
-```zsh
-source $ZSH/oh-my-zsh.sh
-source $ZSH/lib/pulsar.zsh
-
-external_plugins=(
-  zsh-users/zsh-autosuggestions
-  zsh-users/zsh-syntax-highlighting
-)
-plugin-clone $external_plugins
-plugin-load  $external_plugins
-```
-
-### Common issues during migration
-
-- **Plugins disappear** – Move `~/.cache/antidote.lite` to `~/.cache/pulsar`, or simply re-clone
-- **Startup slows down** – Run `plugin-compile` and consider `romkatv/zsh-defer`
-- **Missing pulsar.zsh** – Re-run the install curl command above
-
-### Testing your migration
-
-```zsh
-echo $+functions[plugin-clone]    # -> 1
-echo $+functions[plugin-load]     # -> 1
-echo $+functions[plugin-update]   # -> 1
-echo $+functions[plugin-compile]  # -> 1
-echo $PULSAR_HOME                 # Confirms cache path
-ls   $PULSAR_HOME                 # Lists installed plugins
-```
-
-### Rollback (if needed)
-
-```zsh
-cp archive/antidote.lite.zsh ~/.config/zsh/lib/
-# or
-cp archive/zsh_unplugged.zsh ~/.config/zsh/lib/
-source ~/.config/zsh/lib/antidote.lite.zsh
-```
 
 ## 📚 Examples
 
