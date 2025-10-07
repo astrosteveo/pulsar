@@ -324,7 +324,9 @@ function pulsar__version_compare {
   # Use sort -V to compare versions
   local sorted
   if sorted=$(printf "%s\n%s\n" "$v1" "$v2" | command sort -V 2>/dev/null); then
-    local first_line="${sorted%%$'\n'*}"
+    local -a lines
+    lines=("${(@f)sorted}")
+    local first_line="${lines[1]}"
     # If v1 comes first in sorted order, then v1 < v2, so v2 is newer
     [[ "$first_line" == "$v1" ]] && return 0
     return 1
