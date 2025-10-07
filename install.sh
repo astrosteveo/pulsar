@@ -1,7 +1,6 @@
 #!/bin/sh
 
-# Pulsar installer: POSIX sh, idempotent
-# This script sets up ZDOTDIR (optional), installs bootstrapper, and updates ~/.zshrc
+# Pulsar installer
 
 set -eu
 
@@ -29,8 +28,7 @@ if ! command -v curl >/dev/null 2>&1; then
   curl_present=0
 fi
 
-##### Determine whether to honor ZDOTDIR
-# Policy: Do not set or export ZDOTDIR. Only honor it if the user already has it set.
+# Default to XDG base directory specification
 ZDOTDIR_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 respect_zdotdir=0
 if [ -n "${ZDOTDIR:-}" ]; then
@@ -90,8 +88,7 @@ end_marker="# <<< pulsar <<<"
 # Build desired block into BLOCK (literal $... preserved); channel is substituted here
 BLOCK=$(cat <<EOF
 $start_marker
-# Prefer ZDOTDIR when it is set to a path other than $HOME; otherwise fall back
-# to the XDG default. This avoids treating ZDOTDIR=$HOME as an install prefix.
+# Use ZDOTDIR if set, otherwise ZSH is set to th
 if [[ -n \${ZDOTDIR-} && \$ZDOTDIR != \$HOME ]]; then
   ZSH=\$ZDOTDIR
 else

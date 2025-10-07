@@ -1,16 +1,24 @@
+
 # Pulsar ⚡
 
-[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](LICENSE)
-[![Shell](https://img.shields.io/badge/shell-zsh%205.8%2B-777?logo=gnubash&logoColor=white)](https://www.zsh.org/)
-[![Size](https://img.shields.io/badge/footprint-~100%20LOC-4caf50)](pulsar.zsh)
-[![Changelog](https://img.shields.io/badge/keep-a%20changelog-0a7ea4)](CHANGELOG.md)
-[![Release](https://img.shields.io/github/v/release/astrosteveo/pulsar?display_name=tag&sort=semver)](https://github.com/astrosteveo/pulsar/releases)
+![GitHub License](https://img.shields.io/github/license/astrosteveo/pulsar)
+![Shell](https://img.shields.io/badge/shell-zsh%205.8%2B-777?logo=gnubash&logoColor=white)
+![Size](https://img.shields.io/badge/footprint-~477%20LOC-4caf50)
+![Changelog](https://img.shields.io/badge/keep-a%20changelog-0a7ea4)
+![Release](https://img.shields.io/github/v/release/astrosteveo/pulsar?display_name=tag&sort=semver)
 
-> A micro Zsh plugin manager that's fast, simple, and gets out of your way.
+---
 
-**Pulsar** is a minimalist plugin manager for Zsh built on the philosophy that you don't need thousands of lines of code to manage your shell plugins. At ~100 lines of pure Zsh, Pulsar gives you everything you need: parallel cloning, automatic compilation, smart plugin detection, and blazing-fast loads.
+**Pulsar** is a minimalist plugin manager for Zsh built on the philosophy that you don't need thousands of lines of code to manage your shell plugins. At just under ~500 lines of pure Zsh and Bash, Pulsar gives you everything you need to parallel cloning, automatic compilation, smart plugin detection, and blazing-fast loads.
 
-## ☝️ One-line install
+## Install
+
+### Installer Script
+
+For those who wish to examine the script before executing it: [install.sh](install.sh).
+
+> [!NOTE]
+> It is recommended to review all bash scripts found online before running them to make sure there is no malicious intent.
 
 ```bash
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/astrosteveo/pulsar/main/install.sh)"
@@ -21,32 +29,7 @@ Flags:
 - `--channel=edge` to enable edge notices
 - `--no-zdotdir` to keep existing ZDOTDIR layout
 
-Note: The installer is idempotent. Re-running updates or repairs the single Pulsar block and avoids duplicates or extra backups beyond the first insertion.
-
-What this does:
-
-- Honors an existing ZDOTDIR (if you already export it). Pulsar no longer sets ZDOTDIR for you.
-- Installs a minimal bootstrapper at `$ZDOTDIR/lib/pulsar-bootstrap.zsh`
-- Fetches and refreshes [pulsar.zsh](pulsar.zsh:1) automatically using curl `-z`
-- Safely appends a single guarded block to your zshrc (idempotent) using markers:
-  - `# >>> pulsar >>>`
-  - `# <<< pulsar <<<`
-- Backs up files before changes
-- Removes legacy Pulsar bootstrap from `~/.zshrc` (old non-guarded blocks, raw curl lines, and `source $ZSH/lib/pulsar.zsh`) to keep it clean
-- Supports stable/edge channels via `--channel`
-
-- ZDOTDIR-aware behavior:
-
-- If you already have ZDOTDIR set (either in the environment or in your `~/.zshenv`), your primary shell config will be written to `$ZDOTDIR/.zshrc`.
-- For compatibility with tools that still read `~/.zshrc` directly (notably VS Code integrated terminal), the installer writes a tiny shim to `~/.zshrc` that, when `TERM_PROGRAM=vscode`, re-sources `$ZDOTDIR/.zshrc`. This prevents issues when your real `zshrc` is not located at `~/.zshrc`.
-  - The shim is wrapped with markers `# >>> pulsar-zdotdir-shim >>>` and `# <<< pulsar-zdotdir-shim <<<` and is maintained idempotently.
-  - The shim is only installed if ZDOTDIR is already present; Pulsar does not set ZDOTDIR for you.
-
-Best practice:
-
-- If you want Pulsar to manage configuration outside of `~/.zshrc`, set `ZDOTDIR` to an explicit directory (for example, `${XDG_CONFIG_HOME:-$HOME/.config}/zsh`). If you set `ZDOTDIR=$HOME`, Pulsar treats that as effectively unset and falls back to the XDG default path.
-
-Installer source: [install.sh](install.sh:1)
+---
 
 ## ✨ Features
 
@@ -54,7 +37,7 @@ Installer source: [install.sh](install.sh:1)
 - **Fast** – Parallel plugin cloning and automatic compilation
 - **Smart** – Auto-detects plugin init files and handles nested plugins
 - **Simple** – Four functions: `plugin-clone`, `plugin-load`, `plugin-update`, `plugin-compile`
-- **Compatible** – Works with any GitHub-hosted Zsh plugin
+- **Compatible** – Works with any GitHub-hosted Zsh plugin; just add a repo to an array, and then load that array
 - **Zero dependencies** – Just Zsh and git
 
 ## 🚀 Quick Start
@@ -267,7 +250,7 @@ rm -rf $PULSAR_HOME
 
 ### The problem
 
-- Some plugin managers are abandonware (antibody, zgen, zplug)
+- Many plugins begin development and become abandonware
 - Some disappear entirely (zinit by its original author)
 - Many are thousands of lines of complex code
 - A lot introduce performance issues or breaking changes
