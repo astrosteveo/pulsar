@@ -13,12 +13,22 @@ typeset -gHa _pulsar_zopts=(extended_glob glob_dots no_monitor)
 ##? Clone zsh plugins in parallel.
 function plugin-clone {
   emulate -L zsh; setopt local_options $_pulsar_zopts
-  local repo plugdir; local -Ua repos
+  local spec repo ref plugdir; local -A refmap; local -Ua allrepos repos
+
+  # Ensure base directory exists
+  [[ -d $PULSAR_HOME ]] || command mkdir -p -- $PULSAR_HOME
 
   # Remove bare words ${(M)@:#*/*} and paths with leading slash ${@:#/*}.
   # Then split/join to keep the 2-part user/repo form to bulk-clone repos.
-  for repo in ${${(M)@:#*/*}:#/*}; do
+  for spec in ${${(M)@:#*/*}:#/*}; do
+    ref=${spec##*@}
+    repo=${spec%@*}
     repo=${(@j:/:)${(@s:/:)repo}[1,2]}
+    allrepos+=$repo
+    # store ref only if actually provided with '@'
+    if [[ $spec == *"@"* || ${spec#*@} != $spec ]]; then
+      refmap[$repo]=$ref
+    fi
     [[ -e $PULSAR_HOME/$repo ]] || repos+=$repo
   done
 
@@ -27,9 +37,35 @@ function plugin-clone {
     if [[ ! -d $plugdir ]]; then
       echo "Cloning $repo..."
       (
+        command mkdir -p -- ${plugdir:h}
         command git clone -q --depth 1 --recursive --shallow-submodules \
-          ${PULSAR_GITURL:-https://github.com/}$repo $plugdir
-        plugin-compile $plugdir
+          ${PULSAR_GITURL:-https://github.com/}$repo $plugdir || return
+        # If a ref was provided for this repo, fetch and checkout it
+        if [[ -n ${refmap[$repo]-} ]]; then
+          local _ref=${refmap[$repo]}
+          # Try fast paths: branch/tag names
+          if ! command git -C $plugdir checkout -q --detach --force $_ref 2>/dev/null; then
+            # Fallback: fetch the ref (commit or remote ref) shallowly then checkout
+            command git -C $plugdir fetch -q --depth 1 origin $_ref || true
+            command git -C $plugdir checkout -q --detach --force ${_ref} 2>/dev/null || true
+          fi
+        fi
+        plugin-compile $plugdir || true
+      ) &
+    fi
+  done
+  wait
+
+  # If repo already exists but a ref was requested, honor it
+  local existing
+  for existing in ${(u)allrepos}; do
+    if [[ -d $PULSAR_HOME/$existing && -n ${refmap[$existing]-} ]]; then
+      (
+        plugdir=$PULSAR_HOME/$existing
+        local _ref=${refmap[$existing]}
+        command git -C $plugdir fetch -q --depth 1 origin $_ref || true
+        command git -C $plugdir checkout -q --detach --force ${_ref} 2>/dev/null || true
+        plugin-compile $plugdir || true
       ) &
     fi
   done
@@ -60,7 +96,11 @@ function plugin-script {
   (( ! $+functions[zsh-defer] )) || src="zsh-defer ."
   for plugin in $@; do
     if [[ -n "$kind" ]]; then
-      echo "$kind=(\$$kind $PULSAR_HOME/$plugin)"
+      if [[ "$kind" == "path" && -d $PULSAR_HOME/$plugin/bin ]]; then
+        echo "path=(\$path $PULSAR_HOME/$plugin/bin)"
+      else
+        echo "$kind=(\$$kind $PULSAR_HOME/$plugin)"
+      fi
     else
       inits=(
         {$ZPLUGINDIR,$PULSAR_HOME}/$plugin/${plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
