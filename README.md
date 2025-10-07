@@ -10,6 +10,28 @@
 
 **Pulsar** is a minimalist plugin manager for Zsh built on the philosophy that you don't need thousands of lines of code to manage your shell plugins. At ~100 lines of pure Zsh, Pulsar gives you everything you need: parallel cloning, automatic compilation, smart plugin detection, and blazing-fast loads.
 
+## ☝️ One-line install
+
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/astrosteveo/pulsar/main/install.sh)"
+```
+
+Flags:
+- `--channel=edge` to enable edge notices
+- `--no-zdotdir` to keep existing ZDOTDIR layout
+
+What this does:
+- Creates ZDOTDIR (optional; defaults to `${XDG_CONFIG_HOME:-$HOME/.config}/zsh`) and appends an export to `~/.zshenv` if missing
+- Installs a minimal bootstrapper at `$ZDOTDIR/lib/pulsar-bootstrap.zsh`
+- Fetches and refreshes [pulsar.zsh](pulsar.zsh:1) automatically using curl `-z`
+- Safely appends a single guarded block to `~/.zshrc` (idempotent) using markers:
+  - `# >>> pulsar >>>`
+  - `# <<< pulsar <<<`
+- Backs up files before changes
+- Supports stable/edge channels via `--channel`
+
+Installer source: [install.sh](install.sh:1)
+
 ## ✨ Features
 
 - **Tiny** – ~100 lines of readable Zsh code
