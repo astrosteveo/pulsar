@@ -1,5 +1,9 @@
 # Pulsar ⚡
 
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](LICENSE)
+[![Shell](https://img.shields.io/badge/shell-zsh%205.8%2B-777?logo=gnubash&logoColor=white)](https://www.zsh.org/)
+[![Size](https://img.shields.io/badge/footprint-~100%20LOC-4caf50)](pulsar.zsh)
+
 > A micro Zsh plugin manager that's fast, simple, and gets out of your way.
 
 **Pulsar** is a minimalist plugin manager for Zsh built on the philosophy that you don't need thousands of lines of code to manage your shell plugins. At ~100 lines of pure Zsh, Pulsar gives you everything you need: parallel cloning, automatic compilation, smart plugin detection, and blazing-fast loads.
@@ -130,7 +134,7 @@ Pulsar respects these environment variables:
 - `PULSAR_HOME` – Where to store cloned plugins (default: `~/.cache/pulsar`)
 - `PULSAR_GITURL` – Base URL for cloning (default: `https://github.com/`)
 - `ZPLUGINDIR` – Additional plugin search path (default: `$ZSH_CUSTOM` or `$ZDOTDIR/plugins`)
--
+
 - `PULSAR_PLUGINS` – Plugins to load normally (sourced)
 - `PULSAR_PATH` – Plugins whose `bin`/executables should be added to `PATH`
 - `PULSAR_FPATH` – Plugins to append to `fpath` (prompts/completions)
@@ -227,7 +231,6 @@ Pulsar takes a different approach:
 ├── pulsar.zsh                    # 🌟 Main Pulsar framework (~100 LOC)
 ├── README.md                     # 📖 This document
 ├── LICENSE                       # 📜 Unlicense (public domain)
-├── .zshrc                        # 🔧 Sample config using Pulsar
 ├── examples/
 │   └── pulsar_example.zsh        # 💡 Full-featured Pulsar example
 ├── tests/
@@ -236,13 +239,8 @@ Pulsar takes a different approach:
 │   ├── test-unplugged.md         # 📝 Legacy unplugged tests
 │   ├── test-zsh-unplugged.md     # 📝 Legacy zsh_unplugged tests
 │   └── test-advanced-zshrc.md    # 📝 Advanced config tests
-└── archive/
-    ├── README.md                 # 📚 Archive documentation
-    ├── README.original.md        # 📜 Original README (preserved)
-    ├── zsh_unplugged.zsh         # 🗄️ Original ~20 line function
-    ├── unplugged.zsh             # 🗄️ Early variant
-    ├── antidote.lite.zsh         # 🗄️ Compatibility shim
-    └── examples/…                # Legacy examples
+└── archive/                      # �️ Legacy materials (if present)
+  └── ...
 ```
 
 ## 📈 Future ideas
@@ -259,9 +257,9 @@ Pulsar takes a different approach:
 
 ## 🙏 Credits
 
-Pulsar builds on ideas from:
+Pulsar builds on ideas from and acknowledges:
 
-- [zsh_unplugged](archive/) – The original minimal approach
+- zsh_unplugged – The original minimal approach
 - [antidote](https://github.com/mattmc3/antidote) – Fast, functional plugin management
 - [antibody](https://github.com/getantibody/antibody) – Parallel cloning inspiration
 - The Zsh community – For creating amazing plugins
