@@ -20,6 +20,7 @@ Flags:
 - `--channel=edge` to enable edge notices
 - `--no-zdotdir` to keep existing ZDOTDIR layout
 
+Note: The installer is idempotent. Re-running updates or repairs the single Pulsar block and avoids duplicates or extra backups beyond the first insertion.
 What this does:
 - Creates ZDOTDIR (optional; defaults to `${XDG_CONFIG_HOME:-$HOME/.config}/zsh`) and appends an export to `~/.zshenv` if missing
 - Installs a minimal bootstrapper at `$ZDOTDIR/lib/pulsar-bootstrap.zsh`

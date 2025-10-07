@@ -32,18 +32,23 @@ fi
 ZDOTDIR_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 target_zdotdir="$ZDOTDIR_DEFAULT"
 
-# Ensure .zshenv exports ZDOTDIR, unless disabled
+# Ensure .zshenv exports ZDOTDIR, unless disabled (idempotent: append once, single backup)
 zshenv="$HOME/.zshenv"
 if [ "$no_zdotdir" -ne 1 ]; then
-  if [ ! -f "$zshenv" ] || ! grep -Eqs '^[[:space:]]*export[[:space:]]+ZDOTDIR=' "$zshenv"; then
-    ts="$(date -u +%Y%m%d%H%M%S)"
-    if [ -f "$zshenv" ]; then
+  line='export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"'
+  if [ -f "$zshenv" ]; then
+    if grep -Fxq "$line" "$zshenv"; then
+      : # already present
+    else
+      ts="$(date -u +%Y%m%d%H%M%S)"
       cp -- "$zshenv" "$zshenv.pulsar.bak.$ts" 2>/dev/null || cp "$zshenv" "$zshenv.pulsar.bak.$ts"
+      printf '%s\n' "$line" >>"$zshenv"
+      printf '%s\n' "Updated ~/.zshenv ZDOTDIR"
     fi
-    {
-      printf '%s\n' '# Set ZDOTDIR to XDG-friendly location (managed by Pulsar installer)'
-      printf '%s\n' 'export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"'
-    } >>"$zshenv"
+  else
+    ts="$(date -u +%Y%m%d%H%M%S)"
+    printf '%s\n' "$line" >"$zshenv"
+    printf '%s\n' "Updated ~/.zshenv ZDOTDIR"
   fi
 fi
 
@@ -72,73 +77,83 @@ if [ -f "$bootstrap_path" ]; then
     rm -f -- "$tmp_bootstrap"
   else
     mv -f -- "$tmp_bootstrap" "$bootstrap_path"
+    printf '%s\n' "Bootstrapper updated"
   fi
 else
   mv -f -- "$tmp_bootstrap" "$bootstrap_path"
+  printf '%s\n' "Bootstrapper updated"
 fi
 
 # Prepare guarded block for ~/.zshrc
 start_marker="# >>> pulsar >>>"
 end_marker="# <<< pulsar <<<"
 
-# Compose desired block into temp file
-tmp_block="${HOME}/.pulsar.zshrc.block.$$"
-: >"$tmp_block"
-printf '%s\n' "$start_marker" >>"$tmp_block"
-printf '%s\n' 'ZSH=${ZSH:-${ZDOTDIR:-$HOME/.config/zsh}}' >>"$tmp_block"
-printf '%s\n' 'export PULSAR_PROGRESS=auto' >>"$tmp_block"
-printf '%s\n' 'export PULSAR_COLOR=auto' >>"$tmp_block"
-printf 'export PULSAR_UPDATE_CHANNEL=%s   # or edge if --channel=edge\n' "$channel" >>"$tmp_block"
-printf '%s\n' 'export PULSAR_UPDATE_NOTIFY=1' >>"$tmp_block"
-printf '%s\n' 'PULSAR_PLUGINS=(' >>"$tmp_block"
-printf '%s\n' '  zsh-users/zsh-completions' >>"$tmp_block"
-printf '%s\n' '  zsh-users/zsh-autosuggestions' >>"$tmp_block"
-printf '%s\n' '  zsh-users/zsh-syntax-highlighting' >>"$tmp_block"
-printf '%s\n' ')' >>"$tmp_block"
-printf '%s\n' 'PULSAR_FPATH=(sindresorhus/pure)' >>"$tmp_block"
-printf '%s\n' 'PULSAR_PATH=(romkatv/zsh-bench)' >>"$tmp_block"
-printf '%s\n' 'source "$ZSH/lib/pulsar-bootstrap.zsh"' >>"$tmp_block"
-printf '%s\n' "$end_marker" >>"$tmp_block"
+# Build desired block into BLOCK (literal $... preserved); channel is substituted here
+BLOCK=$(cat <<EOF
+$start_marker
+ZSH=\${ZSH:-\${ZDOTDIR:-\$HOME/.config/zsh}}
+export PULSAR_PROGRESS=auto
+export PULSAR_COLOR=auto
+export PULSAR_UPDATE_CHANNEL=$channel
+export PULSAR_UPDATE_NOTIFY=1
+PULSAR_PLUGINS=(
+  zsh-users/zsh-completions
+  zsh-users/zsh-autosuggestions
+  zsh-users/zsh-syntax-highlighting
+)
+PULSAR_FPATH=(sindresorhus/pure)
+PULSAR_PATH=(romkatv/zsh-bench)
+source "\$ZSH/lib/pulsar-bootstrap.zsh"
+$end_marker
+EOF
+)
 
-# Ensure ~/.zshrc contains exactly one guarded block
+# Ensure ~/.zshrc contains exactly one guarded block via awk (no duplicates)
 zshrc="$HOME/.zshrc"
 ts="$(date -u +%Y%m%d%H%M%S)"
 tmp_zshrc="${zshrc}.tmp.$$"
 
+# Detect if the block already exists to control backup behavior
+had_block=0
+if [ -f "$zshrc" ] && grep -q "^# >>> pulsar >>>\$" "$zshrc"; then
+  had_block=1
+fi
+
+# Filter out any existing pulsar block
 if [ -f "$zshrc" ]; then
-  # Filter out any existing pulsar block
   awk -v start="$start_marker" -v end="$end_marker" '
     BEGIN{inblk=0}
     $0==start{inblk=1; next}
-    $0==end{inblk=0; next}
+    inblk==1 && $0==end{inblk=0; next}
     inblk==0{print}
   ' "$zshrc" >"$tmp_zshrc"
 else
   : >"$tmp_zshrc"
 fi
 
-# Append a newline and the desired block
+# Append a newline and BLOCK once at EOF
 if [ -s "$tmp_zshrc" ]; then
   printf '\n' >>"$tmp_zshrc"
 fi
-cat "$tmp_block" >>"$tmp_zshrc"
+printf '%s\n' "$BLOCK" >>"$tmp_zshrc"
 
-# Only modify ~/.zshrc if content changed
+# Only modify ~/.zshrc if content changed; single backup only on first insertion
 if [ -f "$zshrc" ]; then
   if cmp -s "$tmp_zshrc" "$zshrc"; then
-    rm -f -- "$tmp_zshrc" "$tmp_block"
+    rm -f -- "$tmp_zshrc"
   else
-    cp -- "$zshrc" "$zshrc.pulsar.bak.$ts" 2>/dev/null || cp "$zshrc" "$zshrc.pulsar.bak.$ts"
+    if [ "$had_block" -eq 0 ]; then
+      cp -- "$zshrc" "$zshrc.pulsar.bak.$ts" 2>/dev/null || cp "$zshrc" "$zshrc.pulsar.bak.$ts"
+      printf '%s\n' "Inserted pulsar block into ~/.zshrc (backup at ~/.zshrc.pulsar.bak.$ts)"
+    else
+      printf '%s\n' "Updated ~/.zshrc pulsar block"
+    fi
     mv -f -- "$tmp_zshrc" "$zshrc"
-    rm -f -- "$tmp_block"
   fi
 else
   mv -f -- "$tmp_zshrc" "$zshrc"
-  rm -f -- "$tmp_block"
+  printf '%s\n' "Inserted pulsar block into ~/.zshrc"
 fi
 
-printf '%s\n' "Pulsar install complete."
-printf '%s\n' "Open a new terminal or run: source ~/.zshrc"
-printf '%s\n' "To switch channels later: edit the Pulsar block in ~/.zshrc and set PULSAR_UPDATE_CHANNEL=stable|edge"
 
 exit 0
