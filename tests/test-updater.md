@@ -125,6 +125,32 @@ ok
 %
 ```
 
+Version comparison: correctly handles multi-digit minor/patch versions (portable fallback)
+
+```zsh
+% export TEST_HOME=$T_TEMPDIR/home9
+% mkdir -p $TEST_HOME
+% export XDG_CACHE_HOME=$T_TEMPDIR/.cache9
+% export PULSAR_UPDATE_NOTIFY=1 PULSAR_UPDATE_CHANNEL=stable PULSAR_UPDATE_CHECK_INTERVAL=0
+% export PULSAR_VERSION=v0.2.2
+% ZDOTDIR=$ZDOTDIR HOME=$TEST_HOME zsh -fc 'source ./pulsar.zsh' | grep -q "Pulsar update available" && echo ok
+ok
+%
+```
+
+Version comparison: no notification when local version equals remote
+
+```zsh
+% export TEST_HOME=$T_TEMPDIR/home10
+% mkdir -p $TEST_HOME
+% export XDG_CACHE_HOME=$T_TEMPDIR/.cache10
+% export PULSAR_UPDATE_NOTIFY=1 PULSAR_UPDATE_CHANNEL=stable PULSAR_UPDATE_CHECK_INTERVAL=0
+% export PULSAR_VERSION=v0.3.2
+% ZDOTDIR=$ZDOTDIR HOME=$TEST_HOME zsh -fc 'source ./pulsar.zsh; echo done' | grep -q "Pulsar update available" || echo ok
+ok
+%
+```
+
 ## Teardown
 
 ```zsh

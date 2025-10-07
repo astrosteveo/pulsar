@@ -321,7 +321,7 @@ function pulsar__version_compare {
   # If versions are identical, v2 is not newer
   [[ "$v1" == "$v2" ]] && return 1
   
-  # Use sort -V to compare versions
+  # Try sort -V first (GNU coreutils)
   local sorted
   if sorted=$(printf "%s\n%s\n" "$v1" "$v2" | command sort -V 2>/dev/null); then
     local -a lines
@@ -331,8 +331,32 @@ function pulsar__version_compare {
     [[ "$first_line" == "$v1" ]] && return 0
     return 1
   else
-    # Fallback to lexicographic comparison if sort -V not available
-    [[ "$v1" < "$v2" ]] && return 0
+    # Fallback: parse numeric components for portable comparison
+    local -a parts1 parts2
+    parts1=("${(@s:.:)v1}")
+    parts2=("${(@s:.:)v2}")
+    
+    # Compare each numeric component
+    local i max_parts
+    max_parts=$(( ${#parts1[@]} > ${#parts2[@]} ? ${#parts1[@]} : ${#parts2[@]} ))
+    for (( i = 1; i <= max_parts; i++ )); do
+      local p1="${parts1[$i]:-0}" p2="${parts2[$i]:-0}"
+      # Extract leading numeric part only (ignore any non-numeric suffix)
+      p1="${p1%%[^0-9]*}"
+      p2="${p2%%[^0-9]*}"
+      # Default to 0 if empty after extraction
+      : ${p1:=0}
+      : ${p2:=0}
+      
+      if (( p1 < p2 )); then
+        return 0  # v1 < v2, so v2 is newer
+      elif (( p1 > p2 )); then
+        return 1  # v1 > v2, so v2 is not newer
+      fi
+      # If equal, continue to next component
+    done
+    
+    # All components are equal
     return 1
   fi
 }
