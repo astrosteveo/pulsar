@@ -1,4 +1,10 @@
 #!/bin/zsh
+# Force predictable test output: progress on, no color, suppress updater noise
+export PULSAR_PROGRESS=1
+export PULSAR_COLOR=0
+export PULSAR_UPDATE_NOTIFY=0
+export PULSAR_UPDATE_CHANNEL=stable
+
 function t_setup {
   emulate -L zsh
   setopt local_options null_glob

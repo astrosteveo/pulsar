@@ -89,16 +89,14 @@ function plugin-clone {
   for r in $repos; do
     plugdir=$PULSAR_HOME/$r
     # progress message per repo
-    local action=""
     if [[ ! -d $plugdir ]]; then
-      action="Installing"
+      pulsar__cecho "Cloning ${r}..." 36
+      (( installed_count++ ))
     elif [[ -d $plugdir/.git ]]; then
-      action="Updating"
+      pulsar__cecho "Updating ${r}..." 36
     else
-      action="Preparing"
+      pulsar__cecho "Pulsar: Preparing $r" 36
     fi
-    pulsar__cecho "Pulsar: $action $r" 36
-    [[ $action == "Installing" ]] && (( installed_count++ ))
     if [[ ! -d $plugdir ]]; then
       (
         command mkdir -p -- ${plugdir:h}
@@ -124,7 +122,7 @@ function plugin-clone {
   local existing
   for existing in ${(u)allrepos}; do
     if [[ -d $PULSAR_HOME/$existing && -n ${refmap[$existing]-} ]]; then
-      pulsar__cecho "Pulsar: Updating $existing" 36
+      pulsar__cecho "Updating ${existing}..." 36
       (( updated_count++ ))
       (
         plugdir=$PULSAR_HOME/$existing
