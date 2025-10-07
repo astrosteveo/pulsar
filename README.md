@@ -173,6 +173,7 @@ Pulsar respects these environment variables:
 - `PULSAR_AUTORUN` – Force autorun even if arrays are empty at source time
 - `PULSAR_NO_AUTORUN` – Disable autorun even if arrays are set
 - `PULSAR_AUTOCOMPILE` – If set, run `plugin-compile` after loading
+- `PULSAR_BANNER` – Show a one-line banner after autorun loads (auto|1|0; default: auto)
 
 Update notifier variables:
 
@@ -193,6 +194,7 @@ Update notifier variables:
   - 0: no color
 
 Defaults: `PULSAR_PROGRESS=auto`, `PULSAR_COLOR=auto`.
+If `PULSAR_BANNER` is `auto` or `1`, Pulsar prints a short “Pulsar ready” line on interactive terminals after autorun completes so users see visible confirmation.
 
 Example:
 

@@ -22,6 +22,8 @@ typeset -g PULSAR_REPO=${PULSAR_REPO:-"astrosteveo/pulsar"}  # owner/repo
 typeset -g PULSAR_PROGRESS=${PULSAR_PROGRESS:-auto}
 # Color output: auto=TTY only, 1=force, 0=off
 typeset -g PULSAR_COLOR=${PULSAR_COLOR:-auto}
+# Banner output: show one-line status after autorun; auto=TTY only, 1=force, 0=off
+typeset -g PULSAR_BANNER=${PULSAR_BANNER:-auto}
 # Update notifier cache/state helpers
 pulsar__cache_dir() { print -r -- "${XDG_CACHE_HOME:-$HOME/.cache}/pulsar"; }
 pulsar__state_file() { print -r -- "$(pulsar__cache_dir)/update_state"; }
@@ -42,6 +44,17 @@ pulsar__cecho() {
   # color_code default 36 (cyan)
   pulsar__progress_on || return 0
   local msg=$1 col=${2:-36}
+  if pulsar__color_on; then print -r -- "\e[${col}m$msg\e[0m"; else print -r -- "$msg"; fi
+}
+
+# Banner helpers (separate from progress)
+pulsar__banner_on() {
+  local v=${PULSAR_BANNER:-auto}
+  [[ $v == 1 || ( $v == auto && $(pulsar__isatty; print $?) -eq 0 ) ]]
+}
+pulsar__banner() {
+  local msg=$1 col=${2:-36}
+  pulsar__banner_on || return 0
   if pulsar__color_on; then print -r -- "\e[${col}m$msg\e[0m"; else print -r -- "$msg"; fi
 }
 
@@ -393,6 +406,11 @@ function pulsar__check_update {
     (( $#PULSAR_PLUGINS )) && plugin-load $PULSAR_PLUGINS
 
     [[ -n ${PULSAR_AUTOCOMPILE-} ]] && plugin-compile
+
+    # Print a concise banner on interactive terminals to indicate successful load
+    local _pc=$_all[(I)*]  # dummy to satisfy zsh; not used
+    local _num_plugins=$#PULSAR_PLUGINS _num_path=$#PULSAR_PATH _num_fpath=$#PULSAR_FPATH
+    pulsar__banner "Pulsar ready: plugins=${_num_plugins} path=${_num_path} fpath=${_num_fpath}" 36
   fi
 }
 
