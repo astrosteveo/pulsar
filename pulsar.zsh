@@ -309,8 +309,8 @@ function pulsar__get_main_sha {
 
 function pulsar__version_compare {
   # Compare two version strings (v1.2.3 format)
-  # Returns 0 if v1 < v2 (v2 is newer)
-  # Returns 1 if v1 >= v2 (v1 is same or newer)
+  # Usage: pulsar__version_compare <first_version> <second_version>
+  # Returns 0 if first version is older than second version (second is newer), 1 otherwise.
   emulate -L zsh; setopt local_options $_pulsar_zopts
   local v1="$1" v2="$2"
   
