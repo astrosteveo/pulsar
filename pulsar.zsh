@@ -12,7 +12,7 @@ typeset -gHa _pulsar_zopts=(extended_glob glob_dots no_monitor)
 typeset -g PULSAR_FORCE_RECLONE=${PULSAR_FORCE_RECLONE:-}
 
 # Pulsar update notifier config
-typeset -g PULSAR_VERSION=${PULSAR_VERSION:-"0.0.0-dev"}  # current local version string
+typeset -g PULSAR_VERSION=${PULSAR_VERSION:-"v0.2.2"}  # current local version string
 typeset -g PULSAR_UPDATE_CHANNEL=${PULSAR_UPDATE_CHANNEL:-"stable"}  # stable|edge|off
 typeset -g PULSAR_UPDATE_CHECK_INTERVAL=${PULSAR_UPDATE_CHECK_INTERVAL:-86400}  # seconds
 typeset -g PULSAR_UPDATE_NOTIFY=${PULSAR_UPDATE_NOTIFY:-1}  # 1=on, 0=off

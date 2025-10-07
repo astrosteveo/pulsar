@@ -38,7 +38,7 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 ### Removed
 
-- Legacy migration diffs and before/after comparisons (kept in archive if needed).
+- Legacy migration diffs and before/after comparisons (archive/ removed; legacy contents deleted).
 
 ## [0.1.0] - 2025-10-06
 
