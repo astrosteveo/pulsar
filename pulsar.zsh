@@ -276,6 +276,7 @@ function pulsar__write_state {
     [[ -n "${_pstate[last_check_epoch]-}" ]]      && print -r -- "last_check_epoch=${_pstate[last_check_epoch]}"
     [[ -n "${_pstate[last_seen_edge_sha]-}" ]]    && print -r -- "last_seen_edge_sha=${_pstate[last_seen_edge_sha]}"
     [[ -n "${_pstate[last_seen_stable_tag]-}" ]]  && print -r -- "last_seen_stable_tag=${_pstate[last_seen_stable_tag]}"
+    [[ -n "${_pstate[last_seen_local_version]-}" ]] && print -r -- "last_seen_local_version=${_pstate[last_seen_local_version]}"
   } >| "$tmp" 2>/dev/null
   command mv -f -- "$tmp" "$f" 2>/dev/null || true
 }
@@ -317,6 +318,18 @@ function pulsar__notify_stable {
   print -r -- "${yellow}Pulsar update available: ${current} → ${latest} (stable). Release notes: https://github.com/${PULSAR_REPO}/releases/tag/${latest}${reset}"
 }
 
+function pulsar__notify_local_update {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local current="$1"
+  local yellow="" reset=""
+  if command -v tput >/dev/null 2>&1; then
+    yellow="$(tput setaf 3 2>/dev/null || true)"
+    reset="$(tput sgr0 2>/dev/null || true)"
+  fi
+  [[ "$current" =~ '^v?[0-9]+\.[0-9]+\.[0-9]+$' ]] || return 0
+  print -r -- "${yellow}Pulsar updated to ${current}. Release notes: https://github.com/${PULSAR_REPO}/releases/tag/${current}${reset}"
+}
+
 function pulsar__notify_edge {
   emulate -L zsh; setopt local_options $_pulsar_zopts
   local latest_sha="$1"
@@ -332,10 +345,18 @@ function pulsar__notify_edge {
 function pulsar__check_update {
   emulate -L zsh; setopt local_options $_pulsar_zopts
   (( PULSAR_UPDATE_NOTIFY )) || return 0
+  pulsar__read_state
+
+  # Always show a one-time notice when a new local Pulsar version is first loaded,
+  # regardless of network check intervals or channel settings.
+  if [[ "${_pstate[last_seen_local_version]-}" != "$PULSAR_VERSION" ]]; then
+    pulsar__notify_local_update "$PULSAR_VERSION"
+    _pstate[last_seen_local_version]="$PULSAR_VERSION"
+    pulsar__write_state
+  fi
+
   [[ "$PULSAR_UPDATE_CHANNEL" == "off" ]] && return 0
   command -v git >/dev/null 2>&1 || return 0
-
-  pulsar__read_state
 
   local now; now="$(pulsar__now)"
   local last="${_pstate[last_check_epoch]-0}"
