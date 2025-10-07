@@ -11,6 +11,18 @@
 typeset -gHa _pulsar_zopts=(extended_glob glob_dots no_monitor)
 typeset -g PULSAR_FORCE_RECLONE=${PULSAR_FORCE_RECLONE:-}
 
+# Pulsar update notifier config
+typeset -g PULSAR_VERSION=${PULSAR_VERSION:-"0.0.0-dev"}  # current local version string
+typeset -g PULSAR_UPDATE_CHANNEL=${PULSAR_UPDATE_CHANNEL:-"stable"}  # stable|edge|off
+typeset -g PULSAR_UPDATE_CHECK_INTERVAL=${PULSAR_UPDATE_CHECK_INTERVAL:-86400}  # seconds
+typeset -g PULSAR_UPDATE_NOTIFY=${PULSAR_UPDATE_NOTIFY:-1}  # 1=on, 0=off
+typeset -g PULSAR_REPO=${PULSAR_REPO:-"astrosteveo/pulsar"}  # owner/repo
+
+# Update notifier cache/state helpers
+pulsar__cache_dir() { print -r -- "${XDG_CACHE_HOME:-$HOME/.cache}/pulsar"; }
+pulsar__state_file() { print -r -- "$(pulsar__cache_dir)/update_state"; }
+pulsar__now() { print -r -- ${EPOCHSECONDS:-$(date +%s)}; }
+
 ##? Clone zsh plugins in parallel.
 function plugin-clone {
   emulate -L zsh; setopt local_options $_pulsar_zopts
@@ -184,6 +196,132 @@ function pulsar-doctor {
     echo "  Declarative arrays: none (ok if using manual mode)"
   fi
   return $ok
+}
+
+# Update notifier functions
+
+function pulsar__read_state {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  typeset -gA _pstate
+  _pstate=()
+  local f; f="$(pulsar__state_file)"
+  if [[ -r "$f" ]]; then
+    local k v
+    while IFS='=' read -r k v; do
+      [[ -z "$k" || "$k" == '#'* ]] && continue
+      _pstate[$k]="$v"
+    done < "$f"
+  fi
+}
+
+function pulsar__write_state {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  typeset -gA _pstate
+  local f tmp dir
+  f="$(pulsar__state_file)"
+  dir="${f:h}"
+  command mkdir -p -- "$dir" 2>/dev/null || true
+  tmp="${f}.$$"
+  {
+    [[ -n "${_pstate[last_check_epoch]-}" ]]      && print -r -- "last_check_epoch=${_pstate[last_check_epoch]}"
+    [[ -n "${_pstate[last_seen_edge_sha]-}" ]]    && print -r -- "last_seen_edge_sha=${_pstate[last_seen_edge_sha]}"
+    [[ -n "${_pstate[last_seen_stable_tag]-}" ]]  && print -r -- "last_seen_stable_tag=${_pstate[last_seen_stable_tag]}"
+  } >| "$tmp" 2>/dev/null
+  command mv -f -- "$tmp" "$f" 2>/dev/null || true
+}
+
+# Trigger update check after initialization
+if (( PULSAR_UPDATE_NOTIFY )); then
+  pulsar__check_update
+fi
+
+function pulsar__get_latest_tag {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  command -v git >/dev/null 2>&1 || return 1
+  local url="https://github.com/${PULSAR_REPO}.git"
+  local tags ts
+  tags=$(command git ls-remote --tags "$url" 2>/dev/null) || return 1
+  [[ -n "$tags" ]] || return 1
+  ts=$(print -r -- "$tags" \
+    | awk '{print $2}' \
+    | sed -e 's#refs/tags/##' -e 's/\^\{\}//' \
+    | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$')
+  [[ -n "$ts" ]] || return 1
+  if (print -r -- "$ts" | command sort -V >/dev/null 2>&1); then
+    print -r -- "$ts" | command sort -V | tail -n1
+  else
+    # TODO: sort -V not available; fallback to lexicographic
+    print -r -- "$ts" | command sort | tail -n1
+  fi
+}
+
+function pulsar__get_main_sha {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  command -v git >/dev/null 2>&1 || return 1
+  command git ls-remote "https://github.com/${PULSAR_REPO}.git" refs/heads/main 2>/dev/null | awk '{print $1}'
+}
+
+function pulsar__notify_stable {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local current="$1" latest="$2"
+  local yellow="" reset=""
+  if command -v tput >/dev/null 2>&1; then
+    yellow="$(tput setaf 3 2>/dev/null || true)"
+    reset="$(tput sgr0 2>/dev/null || true)"
+  fi
+  print -r -- "${yellow}Pulsar update available: ${current} → ${latest} (stable). Release notes: https://github.com/${PULSAR_REPO}/releases/tag/${latest}${reset}"
+}
+
+function pulsar__notify_edge {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local latest_sha="$1"
+  local yellow="" reset=""
+  if command -v tput >/dev/null 2>&1; then
+    yellow="$(tput setaf 3 2>/dev/null || true)"
+    reset="$(tput sgr0 2>/dev/null || true)"
+  fi
+  local short="${latest_sha[1,7]}"
+  print -r -- "${yellow}Pulsar update available on main (edge). Latest: ${short}. Compare: https://github.com/${PULSAR_REPO}/compare/${latest_sha}..main${reset}"
+}
+
+function pulsar__check_update {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  (( PULSAR_UPDATE_NOTIFY )) || return 0
+  [[ "$PULSAR_UPDATE_CHANNEL" == "off" ]] && return 0
+  command -v git >/dev/null 2>&1 || return 0
+
+  pulsar__read_state
+
+  local now; now="$(pulsar__now)"
+  local last="${_pstate[last_check_epoch]-0}"
+  local interval="${PULSAR_UPDATE_CHECK_INTERVAL:-86400}"
+  if (( now - last < interval )); then
+    return 0
+  fi
+
+  case "$PULSAR_UPDATE_CHANNEL" in
+    stable)
+      local latest
+      latest="$(pulsar__get_latest_tag)" || latest=""
+      if [[ -n "$latest" && "$latest" != "$PULSAR_VERSION" ]]; then
+        pulsar__notify_stable "$PULSAR_VERSION" "$latest"
+        _pstate[last_seen_stable_tag]="$latest"
+      fi
+      ;;
+    edge)
+      local remote_sha
+      remote_sha="$(pulsar__get_main_sha)" || remote_sha=""
+      if [[ -n "$remote_sha" && "$remote_sha" != "${_pstate[last_seen_edge_sha]-}" ]]; then
+        pulsar__notify_edge "$remote_sha"
+        _pstate[last_seen_edge_sha]="$remote_sha"
+      fi
+      ;;
+    *)
+      ;;
+  esac
+
+  _pstate[last_check_epoch]="$now"
+  pulsar__write_state
 }
 
 # Optional declarative autorun: if arrays are set before sourcing, auto-clone and load.
