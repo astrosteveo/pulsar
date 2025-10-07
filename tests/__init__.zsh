@@ -1,7 +1,7 @@
 #!/bin/zsh
 function t_setup {
   emulate -L zsh
-  setopt local_options
+  setopt local_options null_glob
   0=${(%):-%x}
 
   # save fpath
@@ -19,6 +19,8 @@ function t_setup {
   export ZDOTDIR=$T_TEMPDIR/zdotdir
   typeset -g OLD_XDG_DATA_HOME=$XDG_DATA_HOME
   export XDG_DATA_HOME=$T_TEMPDIR/.local/share
+  typeset -g OLD_XDG_CACHE_HOME=$XDG_CACHE_HOME
+  export XDG_CACHE_HOME=$T_TEMPDIR/.cache
 
   # add unplugged
   mkdir -p $ZDOTDIR/.unplugged
@@ -34,6 +36,7 @@ function t_teardown {
   # reset current session
   export ZDOTDIR=$OLD_ZDOTDIR
   export XDG_DATA_HOME=$OLD_XDG_DATA_HOME
+  export XDG_CACHE_HOME=$OLD_XDG_CACHE_HOME
   unset ZPLUGINDIR ZUNPLUG_CUSTOM ZUNPLUG_REPOS
 
   # restore original fpath

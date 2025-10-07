@@ -107,3 +107,43 @@ function plugin-compile {
     zrecompile -pq "$zfile"
   done
 }
+
+# Optional declarative autorun: if arrays are set before sourcing, auto-clone and load.
+# Configure in your .zshrc, then source this file:
+#   PULSAR_PATH=(romkatv/zsh-bench)
+#   PULSAR_FPATH=(sindresorhus/pure)
+#   PULSAR_PLUGINS=(zsh-users/zsh-completions zsh-users/zsh-autosuggestions)
+#   source $ZSH/lib/pulsar.zsh
+# Control with:
+#   PULSAR_NO_AUTORUN=1   # disable autorun even if arrays are set
+#   PULSAR_AUTORUN=1      # force autorun regardless
+#   PULSAR_AUTOCOMPILE=1  # run plugin-compile after loading
+()
+{
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  # Only autorun at source time if enabled or arrays are populated.
+  local do_autorun=0
+  if [[ -n ${PULSAR_AUTORUN-} ]]; then
+    do_autorun=1
+  elif (( $#PULSAR_PLUGINS + $#PULSAR_PATH + $#PULSAR_FPATH > 0 )); then
+    do_autorun=1
+  fi
+
+  if (( ${+PULSAR_NO_AUTORUN} )); then
+    do_autorun=0
+  fi
+
+  if (( do_autorun )); then
+    local -Ua _all=()
+    (( $#PULSAR_PLUGINS )) && _all+=$PULSAR_PLUGINS
+    (( $#PULSAR_PATH ))    && _all+=$PULSAR_PATH
+    (( $#PULSAR_FPATH ))   && _all+=$PULSAR_FPATH
+    (( $#_all )) && plugin-clone $_all
+
+    (( $#PULSAR_PATH ))  && plugin-load --kind path  $PULSAR_PATH
+    (( $#PULSAR_FPATH )) && plugin-load --kind fpath $PULSAR_FPATH
+    (( $#PULSAR_PLUGINS )) && plugin-load $PULSAR_PLUGINS
+
+    [[ -n ${PULSAR_AUTOCOMPILE-} ]] && plugin-compile
+  fi
+}

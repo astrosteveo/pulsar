@@ -28,27 +28,35 @@ if [[ ! -e $ZSH/lib/pulsar.zsh ]]; then
     https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh
 fi
 
-# Load Pulsar
-source $ZSH/lib/pulsar.zsh
-
-# Define your plugins
-plugins=(
-  sindresorhus/pure                 # prompt
-  zsh-users/zsh-completions         # extra completions
-  zsh-users/zsh-autosuggestions     # fish-like autosuggestions
-  zsh-users/zsh-syntax-highlighting # syntax highlighting
+# Declarative plugins (no manual clone/load needed)
+PULSAR_PATH=(
+  # put executables on PATH
+  # romkatv/zsh-bench
+)
+PULSAR_FPATH=(
+  # prompts/completions into fpath
+  # sindresorhus/pure
+)
+PULSAR_PLUGINS=(
+  zsh-users/zsh-completions
+  zsh-users/zsh-autosuggestions
+  zsh-users/zsh-syntax-highlighting
 )
 
-# Load them
-plugin-clone $plugins
-plugin-load $plugins
+# Optional: speed up startup by compiling after load
+PULSAR_AUTOCOMPILE=1
+
+# Load Pulsar (auto-clones/loads based on arrays above)
+source $ZSH/lib/pulsar.zsh
 ```
 
 That's it. Restart your shell and you're done.
 
 ## 🧠 Usage Patterns
 
-### Basic plugin management
+> Prefer declarative mode above. Manual mode is still available for full control.
+
+### Basic plugin management (manual mode)
 
 ```zsh
 # Clone plugins (happens in parallel)
@@ -64,7 +72,7 @@ plugin-update
 plugin-compile
 ```
 
-### Advanced techniques
+### Advanced techniques (manual mode)
 
 - **Pin to a specific commit**
 
@@ -122,12 +130,25 @@ Pulsar respects these environment variables:
 - `PULSAR_HOME` – Where to store cloned plugins (default: `~/.cache/pulsar`)
 - `PULSAR_GITURL` – Base URL for cloning (default: `https://github.com/`)
 - `ZPLUGINDIR` – Additional plugin search path (default: `$ZSH_CUSTOM` or `$ZDOTDIR/plugins`)
+-
+- `PULSAR_PLUGINS` – Plugins to load normally (sourced)
+- `PULSAR_PATH` – Plugins whose `bin`/executables should be added to `PATH`
+- `PULSAR_FPATH` – Plugins to append to `fpath` (prompts/completions)
+- `PULSAR_AUTORUN` – Force autorun even if arrays are empty at source time
+- `PULSAR_NO_AUTORUN` – Disable autorun even if arrays are set
+- `PULSAR_AUTOCOMPILE` – If set, run `plugin-compile` after loading
 
 Example:
 
 ```zsh
 export PULSAR_HOME=~/.local/share/pulsar
 export PULSAR_GITURL=https://mirror.example.com/
+
+# Declarative setup
+PULSAR_PLUGINS=(zsh-users/zsh-autosuggestions zsh-users/zsh-syntax-highlighting)
+# PULSAR_PATH=(romkatv/zsh-bench)
+# PULSAR_FPATH=(sindresorhus/pure)
+# PULSAR_AUTOCOMPILE=1
 ```
 
 ## 🛠 Maintenance
