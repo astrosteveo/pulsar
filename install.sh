@@ -38,8 +38,12 @@ if [ -n "${ZDOTDIR:-}" ]; then
 elif [ -f "$HOME/.zshenv" ] && grep -Eq '^export[[:space:]]+ZDOTDIR=' "$HOME/.zshenv"; then
   respect_zdotdir=1
 fi
-# For asset placement, prefer the honored ZDOTDIR when set, otherwise fallback to XDG default
-target_zdotdir="${ZDOTDIR:-$ZDOTDIR_DEFAULT}"
+# For asset placement, prefer a respected ZDOTDIR when set AND not equal to $HOME; otherwise fallback to XDG default
+if [ "$respect_zdotdir" -eq 1 ] && [ -n "${ZDOTDIR:-}" ] && [ "$ZDOTDIR" != "$HOME" ]; then
+  target_zdotdir="$ZDOTDIR"
+else
+  target_zdotdir="$ZDOTDIR_DEFAULT"
+fi
 
 # Do NOT modify ~/.zshenv. We only honor existing ZDOTDIR; we never set it.
 
@@ -86,10 +90,13 @@ end_marker="# <<< pulsar <<<"
 # Build desired block into BLOCK (literal $... preserved); channel is substituted here
 BLOCK=$(cat <<EOF
 $start_marker
-# Prefer ZDOTDIR over an externally-set \$ZSH so that sourcing the generated
-# ~/.zshrc always uses the ZDOTDIR-based install prefix in the target
-# environment (important for CI and editors like VS Code).
-ZSH=\${ZDOTDIR:-\${XDG_CONFIG_HOME:-\$HOME/.config}/zsh}
+# Prefer ZDOTDIR when it is set to a path other than $HOME; otherwise fall back
+# to the XDG default. This avoids treating ZDOTDIR=$HOME as an install prefix.
+if [[ -n \${ZDOTDIR-} && \$ZDOTDIR != \$HOME ]]; then
+  ZSH=\$ZDOTDIR
+else
+  ZSH=\${XDG_CONFIG_HOME:-\$HOME/.config}/zsh
+fi
 export PULSAR_PROGRESS=auto
 export PULSAR_COLOR=auto
 export PULSAR_UPDATE_CHANNEL=$channel
@@ -107,7 +114,7 @@ EOF
 )
 
 ## Decide which zshrc to manage as the primary file
-if [ "$respect_zdotdir" -eq 1 ]; then
+if [ "$respect_zdotdir" -eq 1 ] && [ -n "${ZDOTDIR:-}" ] && [ "$ZDOTDIR" != "$HOME" ]; then
   zshrc="$target_zdotdir/.zshrc"
 else
   zshrc="$HOME/.zshrc"
@@ -168,9 +175,9 @@ else
   printf '%s\n' "Inserted pulsar block into ~/.zshrc"
 fi
 
-# Add a VS Code compatibility shim in ~/.zshrc only when ZDOTDIR is honored
+# Add a VS Code compatibility shim in ~/.zshrc only when ZDOTDIR is honored (and not $HOME)
 need_shim=0
-if [ "$respect_zdotdir" -eq 1 ]; then
+if [ "$respect_zdotdir" -eq 1 ] && [ -n "${ZDOTDIR:-}" ] && [ "$ZDOTDIR" != "$HOME" ]; then
   need_shim=1
 fi
 if [ "$need_shim" -eq 1 ]; then

@@ -6,20 +6,21 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 ## [Unreleased]
 
+## [0.3.0] - 2025-10-07
+
+### Changed
+
+- Installer: do not set ZDOTDIR; only respect a pre-set ZDOTDIR (env or ~/.zshenv). Prefer ZDOTDIR for install targets only when present.
+- Installer: prefer ZDOTDIR for `$ZSH` resolution; make curl optional; safe bootstrap sourcing; portable sed for legacy block removal.
+- Tests: harden `substenv`; make VS Code shim assertion robust across clitest variants.
+- README: clarify ZDOTDIR policy and behavior.
+
 ### Removed
+
 - Legacy root files: .zshrc, debug_pulsar.zsh, unplugged.zsh, zsh_unplugged.zsh
 - Directories: archive/, zsh_unplugged/
 - Tests: tests/test-unplugged.md, tests/test-zsh-unplugged.md
 
-### Changed
-- README: add Quick Start (no root .zshrc) and document update notifier variables
-- Assets: align demo instructions with Quick Start
-- Tests: remove legacy references in remaining test scaffolding
-
-- markdown
-  - updater: edge smoke test 2025-10-07T03:51:00Z
-- markdown
-  - updater: edge smoke test 2025-10-07T03:52:14Z
 ## [0.2.0] - 2025-10-06
 
 ### Added
@@ -44,6 +45,7 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 - Initial Pulsar extraction and documentation.
 
-[Unreleased]: https://github.com/astrosteveo/pulsar/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/astrosteveo/pulsar/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/astrosteveo/pulsar/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/astrosteveo/pulsar/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/astrosteveo/pulsar/commits/main
