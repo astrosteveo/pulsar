@@ -16,6 +16,8 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 - Assets: align demo instructions with Quick Start
 - Tests: remove legacy references in remaining test scaffolding
 
+- markdown
+  - updater: edge smoke test 2025-10-07T03:51:00Z
 ## [0.2.0] - 2025-10-06
 
 ### Added
