@@ -381,6 +381,8 @@ function pulsar__check_update {
 #   PULSAR_AUTOCOMPILE=1  # run plugin-compile after loading
 ()
 {
+  local was_interactive=0
+  [[ $- == *i* ]] && was_interactive=1
   emulate -L zsh; setopt local_options $_pulsar_zopts
   # Only autorun at source time if enabled or arrays are populated.
   local do_autorun=0
@@ -407,10 +409,11 @@ function pulsar__check_update {
 
     [[ -n ${PULSAR_AUTOCOMPILE-} ]] && plugin-compile
 
-    # Print a concise banner on interactive terminals to indicate successful load
-    local _pc=$_all[(I)*]  # dummy to satisfy zsh; not used
-    local _num_plugins=$#PULSAR_PLUGINS _num_path=$#PULSAR_PATH _num_fpath=$#PULSAR_FPATH
-    pulsar__banner "Pulsar ready: plugins=${_num_plugins} path=${_num_path} fpath=${_num_fpath}" 36
+    # Print a concise banner only for interactive shells
+    if (( was_interactive )); then
+      local _num_plugins=$#PULSAR_PLUGINS _num_path=$#PULSAR_PATH _num_fpath=$#PULSAR_FPATH
+      pulsar__banner "Pulsar ready: plugins=${_num_plugins} path=${_num_path} fpath=${_num_fpath}" 36
+    fi
   fi
 }
 
