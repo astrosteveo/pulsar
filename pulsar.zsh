@@ -399,7 +399,7 @@ function pulsar__check_update {
     stable)
       local latest
       latest="$(pulsar__get_latest_tag)" || latest=""
-      # Only notify if latest is non-empty and is actually newer than current version
+      # Only notify if latest is non-empty and current version is older than latest
       if [[ -n "$latest" ]] && pulsar__version_compare "$PULSAR_VERSION" "$latest"; then
         pulsar__notify_stable "$PULSAR_VERSION" "$latest"
         _pstate[last_seen_stable_tag]="$latest"
