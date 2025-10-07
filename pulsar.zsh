@@ -442,3 +442,36 @@ function pulsar__check_update {
 if (( PULSAR_UPDATE_NOTIFY )); then
   pulsar__check_update
 fi
+
+# Convenience commands
+
+##? Update Pulsar core (self) if curl is available, then re-source.
+function pulsar-self-update {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  # Resolve install base similarly to installer logic
+  local base
+  if [[ -n ${ZDOTDIR-} && $ZDOTDIR != $HOME ]]; then
+    base=$ZDOTDIR
+  else
+    base=${XDG_CONFIG_HOME:-$HOME/.config}/zsh
+  fi
+  local dest="$base/lib/pulsar.zsh"
+  if ! command -v curl >/dev/null 2>&1; then
+    echo >&2 "pulsar-self-update: curl not found; skipping self-update."
+    return 0
+  fi
+  local url="https://raw.githubusercontent.com/${PULSAR_REPO}/main/pulsar.zsh"
+  if [[ -f "$dest" ]]; then
+    command curl -fsSL -z "$dest" -o "$dest" "$url" || return 0
+  else
+    command curl -fsSL -o "$dest" "$url" || return 0
+  fi
+  source "$dest" 2>/dev/null || true
+}
+
+##? Update Pulsar and plugins.
+function pulsar-update {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  pulsar-self-update || true
+  plugin-update
+}

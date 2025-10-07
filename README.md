@@ -227,6 +227,10 @@ ls $PULSAR_HOME
 
 # Remove a plugin (after removing it from your list)
 rm -rf $PULSAR_HOME/user/plugin-name
+
+# Update Pulsar itself (and plugins)
+pulsar-self-update   # updates core script via curl and re-sources
+pulsar-update        # self + plugins
 ```
 
 ## 🆘 Troubleshooting
