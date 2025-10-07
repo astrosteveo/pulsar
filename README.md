@@ -3,6 +3,8 @@
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](LICENSE)
 [![Shell](https://img.shields.io/badge/shell-zsh%205.8%2B-777?logo=gnubash&logoColor=white)](https://www.zsh.org/)
 [![Size](https://img.shields.io/badge/footprint-~100%20LOC-4caf50)](pulsar.zsh)
+[![Changelog](https://img.shields.io/badge/keep-a%20changelog-0a7ea4)](CHANGELOG.md)
+[![Release](https://img.shields.io/github/v/release/astrosteveo/pulsar?display_name=tag&sort=semver)](https://github.com/astrosteveo/pulsar/releases)
 
 > A micro Zsh plugin manager that's fast, simple, and gets out of your way.
 
@@ -55,6 +57,12 @@ source $ZSH/lib/pulsar.zsh
 ```
 
 That's it. Restart your shell and you're done.
+
+## 🎥 Try Pulsar
+
+Short demo of declarative setup and first-run clone (optional):
+
+![Pulsar demo](assets/pulsar-demo.gif)
 
 ## 🧠 Usage Patterns
 
