@@ -134,7 +134,8 @@ function plugin-clone {
     fi
   done
   wait
-  if pulsar__progress_on; then
+  # Print final summary only when running in an interactive TTY.
+  if pulsar__isatty; then
     (( installed_count + updated_count )) && pulsar__cecho "Pulsar: ${installed_count} installed, ${updated_count} updated" 32
   fi
 }
