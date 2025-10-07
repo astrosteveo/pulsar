@@ -14,7 +14,9 @@ typeset -g PULSAR_FORCE_RECLONE=${PULSAR_FORCE_RECLONE:-}
 ##? Clone zsh plugins in parallel.
 function plugin-clone {
   emulate -L zsh; setopt local_options $_pulsar_zopts
-  local spec repo ref plugdir; local -A refmap; local -Ua allrepos repos
+  local spec repo ref plugdir processed_repo repo_part r
+  local -A refmap
+  local -Ua allrepos repos
 
   # Ensure base directory exists
   [[ -d $PULSAR_HOME ]] || command mkdir -p -- $PULSAR_HOME
@@ -24,36 +26,42 @@ function plugin-clone {
   for spec in ${${(M)@:#*/*}:#/*}; do
     ref=${spec##*@}
     repo=${spec%@*}
-    # Process each repository individually by splitting on spaces first
-     for repo_part in ${(s: :)repo}; do
-       processed_repo=${(@j:/:)${(@s:/:)repo_part}[1,2]}
-       allrepos+=$processed_repo
-    
-    # store ref only if actually provided with '@'
-    if [[ $spec == *"@"* || ${spec#*@} != $spec ]]; then
-      refmap[$repo]=$ref
-    fi
-    if [[ -e $PULSAR_HOME/$repo ]]; then
-      if [[ -n $PULSAR_FORCE_RECLONE ]]; then
-        command rm -rf -- $PULSAR_HOME/$repo
-        repos+=$repo
+
+    # Split a single spec that may contain multiple repos respecting quotes
+    for repo_part in ${(z)repo}; do
+      # Normalize to owner/repo
+      processed_repo=${(@j:/:)${(@s:/:)repo_part}[1,2]}
+      allrepos+=($processed_repo)
+
+      # Map ref if provided as @ref to normalized repo
+      if [[ $repo_part == *"@"* ]]; then
+        refmap[$processed_repo]=${repo_part##*@}
       fi
-    else
-      repos+=$repo
-    fi
+
+      # Build list of repos that need cloning
+      if [[ -e $PULSAR_HOME/$processed_repo ]]; then
+        if [[ -n $PULSAR_FORCE_RECLONE ]]; then
+          command rm -rf -- $PULSAR_HOME/$processed_repo
+          repos+=$processed_repo
+        fi
+      else
+        repos+=$processed_repo
+      fi
+    done
   done
 
-  for repo in $repos; do
-    plugdir=$PULSAR_HOME/$repo
+  # Clone missing repos
+  for r in $repos; do
+    plugdir=$PULSAR_HOME/$r
     if [[ ! -d $plugdir ]]; then
-      echo "Cloning $repo..."
+      echo "Cloning $r..."
       (
         command mkdir -p -- ${plugdir:h}
-        command git clone -q --depth 1 --recursive --shallow-submodules \
-          ${PULSAR_GITURL:-https://github.com/}$repo $plugdir || return
+        local url="${PULSAR_GITURL:-https://github.com/}${r}.git"
+        command git clone -q --depth 1 --recursive --shallow-submodules "$url" "$plugdir" || return
         # If a ref was provided for this repo, fetch and checkout it
-        if [[ -n ${refmap[$repo]-} ]]; then
-          local _ref=${refmap[$repo]}
+        if [[ -n ${refmap[$r]-} ]]; then
+          local _ref=${refmap[$r]}
           # Try fast paths: branch/tag names
           if ! command git -C $plugdir checkout -q --detach --force $_ref 2>/dev/null; then
             # Fallback: fetch the ref (commit or remote ref) shallowly then checkout
