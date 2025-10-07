@@ -162,12 +162,23 @@ Pulsar respects these environment variables:
 - `PULSAR_AUTOCOMPILE` – If set, run `plugin-compile` after loading
 - `PULSAR_BANNER` – Show a one-line banner after autorun loads (auto|1|0; default: auto)
 
-Update notifier variables:
+### Update notifications
 
-- `PULSAR_UPDATE_CHANNEL` – stable|edge|off
-- `PULSAR_UPDATE_CHECK_INTERVAL` – seconds
-- `PULSAR_UPDATE_NOTIFY` – 0/1
-- `PULSAR_REPO` – owner/repo
+Pulsar can automatically check for updates and notify you when a new version is available. On each shell initialization, Pulsar compares your local version to the remote version based on the configured channel.
+
+- `PULSAR_UPDATE_CHANNEL` – Update channel (default: `stable`)
+  - `stable` – Check for new release tags; only notifies when remote version is newer than local
+  - `edge` – Track the latest commit on the main branch (may be unstable)
+  - `off` – Disable update checks
+- `PULSAR_UPDATE_CHECK_INTERVAL` – Seconds between update checks (default: `86400` = 24 hours)
+- `PULSAR_UPDATE_NOTIFY` – Enable/disable notifications (default: `1` = enabled)
+- `PULSAR_REPO` – Repository to check for updates (default: `astrosteveo/pulsar`)
+
+**How it works:**
+
+- **Stable channel**: Pulsar fetches the latest release tag from GitHub and compares it to your local `PULSAR_VERSION` using semantic version comparison. You'll only be notified if a newer version is available.
+- **Edge channel**: Pulsar fetches the latest commit SHA from the main branch and notifies you if it differs from the last seen SHA, allowing you to track cutting-edge updates (but potentially unstable).
+- Update checks respect the configured interval to avoid excessive network requests.
 
 ### Progress output
 
