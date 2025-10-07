@@ -58,12 +58,34 @@ function t_teardown {
 
 function substenv {
   if (( $# == 0 )); then
-    substenv ZDOTDIR | substenv HOME
-  else
-    local sedexp="s|${(P)1}|\$$1|g"
-    shift
-    command sed "$sedexp" "$@"
+    # Default ordering: prefer expanding ZDOTDIR, then XDG_CONFIG_HOME, then HOME
+    substenv ZDOTDIR | substenv XDG_CONFIG_HOME | substenv HOME
+    return
   fi
+
+  # Build a safe sed expression. If the variable is unset/empty then it's a no-op.
+  local name=$1
+  shift
+  local val=${(P)name}
+  if [[ -z "$val" ]]; then
+    # nothing to replace; just pass through stdin (or files) unchanged
+    if (( $# == 0 )); then
+      cat
+    else
+      # cat the files to stdout unchanged
+      cat "$@"
+    fi
+    return
+  fi
+
+  # Escape the replacement delimiter by using '|' as delimiter and avoid -e issues.
+  local sedexp="s|${val}|\$$name|g"
+  if (( $# == 0 )); then
+    command sed -e "$sedexp"
+  else
+    command sed -e "$sedexp" "$@"
+  fi
+  return
 }
 
 function mockgit {

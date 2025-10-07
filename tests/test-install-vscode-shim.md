@@ -38,7 +38,7 @@ Verify VS Code shim exists in ~/.zshrc and sources $ZDOTDIR/.zshrc when TERM_PRO
 ```zsh
 % test -f $TEST_HOME/.zshrc && grep -q 'pulsar-zdotdir-shim' $TEST_HOME/.zshrc && echo ok
 ok
-% TERM_PROGRAM=vscode HOME=$TEST_HOME ZDOTDIR=$ZDOTDIR zsh -fc 'source ~/.zshrc; echo sourced' #=> --stdout "sourced"
+% TERM_PROGRAM=vscode HOME=$TEST_HOME ZDOTDIR=$ZDOTDIR zsh -fc 'source ~/.zshrc; echo sourced' | grep -x sourced #=> --exit 0
 %
 ```
 

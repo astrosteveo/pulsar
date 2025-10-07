@@ -23,9 +23,10 @@ for arg in "$@"; do
   esac
 done
 
+curl_present=1
 if ! command -v curl >/dev/null 2>&1; then
-  printf >&2 '%s\n' "Error: 'curl' is required. Install curl and rerun."
-  exit 1
+  printf >&2 '%s\n' "Warning: 'curl' not found. The installer will still write configuration files but won't fetch runtime assets."
+  curl_present=0
 fi
 
 # Determine target ZDOTDIR path (used for bootstrapper)
@@ -64,14 +65,18 @@ tmp_bootstrap="${bootstrap_path}.tmp.$$"
 umask 022
 cat >"$tmp_bootstrap" <<'ZSH_BOOTSTRAP'
 # pulsar bootstrapper (zsh)
-ZSH=${ZSH:-${ZDOTDIR:-$HOME/.config/zsh}}
+ZSH=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
 mkdir -p "$ZSH/lib"
-if [[ -f "$ZSH/lib/pulsar.zsh" ]]; then
-  curl -fsSL -z "$ZSH/lib/pulsar.zsh" -o "$ZSH/lib/pulsar.zsh" https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh
-else
-  curl -fsSL -o "$ZSH/lib/pulsar.zsh" https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh
+if command -v curl >/dev/null 2>&1; then
+  if [[ -f "$ZSH/lib/pulsar.zsh" ]]; then
+    curl -fsSL -z "$ZSH/lib/pulsar.zsh" -o "$ZSH/lib/pulsar.zsh" https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh || true
+  else
+    curl -fsSL -o "$ZSH/lib/pulsar.zsh" https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh || true
+  fi
 fi
-source "$ZSH/lib/pulsar.zsh"
+if [[ -f "$ZSH/lib/pulsar.zsh" ]]; then
+  source "$ZSH/lib/pulsar.zsh"
+fi
 ZSH_BOOTSTRAP
 
 if [ -f "$bootstrap_path" ]; then
@@ -93,7 +98,10 @@ end_marker="# <<< pulsar <<<"
 # Build desired block into BLOCK (literal $... preserved); channel is substituted here
 BLOCK=$(cat <<EOF
 $start_marker
-ZSH=\${ZSH:-\${ZDOTDIR:-\$HOME/.config/zsh}}
+# Prefer ZDOTDIR over an externally-set \$ZSH so that sourcing the generated
+# ~/.zshrc always uses the ZDOTDIR-based install prefix in the target
+# environment (important for CI and editors like VS Code).
+ZSH=\${ZDOTDIR:-\${XDG_CONFIG_HOME:-\$HOME/.config}/zsh}
 export PULSAR_PROGRESS=auto
 export PULSAR_COLOR=auto
 export PULSAR_UPDATE_CHANNEL=$channel
@@ -129,22 +137,15 @@ fi
 legacy_flag="${tmp_zshrc}.legacy_removed"
 rm -f -- "$legacy_flag" 2>/dev/null || true
 if [ -f "$zshrc" ]; then
-  awk -v start1="# Setup vars" -v start2="# Download Pulsar if needed" -v start3="# Declarative config" \
-      -v endrx="^source[[:space:]]\\$ZSH/lib/pulsar\\.zsh$" \
-      -v gbeg="$start_marker" -v gend="$end_marker" -v flagfile="$legacy_flag" '
-    BEGIN{inblk=0; inlegacy=0; removed=0}
-    $0==gbeg { inblk=1; next }
-    inblk==1 && $0==gend { inblk=0; next }
-    ($0==start1 || $0==start2 || $0==start3) { inlegacy=1; removed=1; next }
-    inlegacy==1 {
-      if ($0 ~ endrx) { inlegacy=0; next }
-      next
-    }
-    $0 ~ /curl .*raw\\.githubusercontent\\.com\\/.*\\/pulsar\\.zsh/ { removed=1; next }
-    $0 ~ /^source[[:space:]]\\$ZSH\\/lib\\/pulsar\\.zsh$/ { removed=1; next }
-    { print }
-    END { if (removed) { print "1" > flagfile } }
-  ' "$zshrc" >"$tmp_zshrc"
+  # Remove any existing guarded pulsar block and legacy bootstrap lines.
+  # Use sed for portability and simpler escaping across shells.
+  sed -e "/^${start_marker}$/,/^${end_marker}$/d" \
+      -e "/curl .*raw.githubusercontent.com\/.*\/pulsar\.zsh/d" \
+      -e "/^source[[:space:]].*\/lib\/pulsar\.zsh$/d" \
+      "$zshrc" >"$tmp_zshrc"
+  if ! cmp -s "$zshrc" "$tmp_zshrc"; then
+    printf '1' >"$legacy_flag"
+  fi
 else
   : >"$tmp_zshrc"
 fi
