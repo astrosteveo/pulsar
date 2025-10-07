@@ -229,7 +229,8 @@ Pulsar takes a different approach:
 
 ## 📚 Examples
 
-- [examples/pulsar_example.zsh](examples/pulsar_example.zsh) – Full-featured configuration
+- [examples/pulsar_declarative.zsh](examples/pulsar_declarative.zsh) – Declarative, auto-load setup
+- [examples/pulsar_example.zsh](examples/pulsar_example.zsh) – Full-featured manual configuration
 - [archive/examples/](archive/examples/) – Legacy setups preserved for reference
 
 ## 🗂️ Project structure

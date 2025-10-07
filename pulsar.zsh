@@ -9,6 +9,7 @@
 : ${PULSAR_HOME:=${XDG_CACHE_HOME:-~/.cache}/pulsar}
 : ${ZPLUGINDIR:=${ZSH_CUSTOM:-${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}}/plugins}
 typeset -gHa _pulsar_zopts=(extended_glob glob_dots no_monitor)
+typeset -g PULSAR_FORCE_RECLONE=${PULSAR_FORCE_RECLONE:-}
 
 ##? Clone zsh plugins in parallel.
 function plugin-clone {
@@ -29,7 +30,14 @@ function plugin-clone {
     if [[ $spec == *"@"* || ${spec#*@} != $spec ]]; then
       refmap[$repo]=$ref
     fi
-    [[ -e $PULSAR_HOME/$repo ]] || repos+=$repo
+    if [[ -e $PULSAR_HOME/$repo ]]; then
+      if [[ -n $PULSAR_FORCE_RECLONE ]]; then
+        command rm -rf -- $PULSAR_HOME/$repo
+        repos+=$repo
+      fi
+    else
+      repos+=$repo
+    fi
   done
 
   for repo in $repos; do
@@ -146,6 +154,25 @@ function plugin-compile {
     [[ $zfile != */test-data/* ]] || continue
     zrecompile -pq "$zfile"
   done
+}
+
+# Lightweight environment check
+function pulsar-doctor {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local ok=1
+  echo "Pulsar doctor"
+  echo "  zsh:        $ZSH_VERSION"
+  echo "  git:        $(command -v git >/dev/null && git --version || echo 'missing')"
+  echo "  PULSAR_HOME: ${PULSAR_HOME}"
+  echo "  GIT URL:    ${PULSAR_GITURL:-https://github.com/}"
+  [[ -d $PULSAR_HOME ]] || { echo "  WARN: PULSAR_HOME does not exist"; ok=0; }
+  command -v git >/dev/null || { echo "  ERROR: git not found"; ok=0; }
+  if (( $#PULSAR_PLUGINS + $#PULSAR_PATH + $#PULSAR_FPATH > 0 )); then
+    echo "  Declarative arrays detected: ok"
+  else
+    echo "  Declarative arrays: none (ok if using manual mode)"
+  fi
+  return $ok
 }
 
 # Optional declarative autorun: if arrays are set before sourcing, auto-clone and load.
