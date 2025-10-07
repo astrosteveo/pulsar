@@ -32,11 +32,11 @@ fi
 ##### Determine whether to honor ZDOTDIR
 # Policy: Do not set or export ZDOTDIR. Only honor it if the user already has it set.
 ZDOTDIR_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-honor_zdotdir=0
+respect_zdotdir=0
 if [ -n "${ZDOTDIR:-}" ]; then
-  honor_zdotdir=1
+  respect_zdotdir=1
 elif [ -f "$HOME/.zshenv" ] && grep -Eq '^export[[:space:]]+ZDOTDIR=' "$HOME/.zshenv"; then
-  honor_zdotdir=1
+  respect_zdotdir=1
 fi
 # For asset placement, prefer the honored ZDOTDIR when set, otherwise fallback to XDG default
 target_zdotdir="${ZDOTDIR:-$ZDOTDIR_DEFAULT}"
@@ -107,7 +107,7 @@ EOF
 )
 
 ## Decide which zshrc to manage as the primary file
-if [ "$honor_zdotdir" -eq 1 ]; then
+if [ "$respect_zdotdir" -eq 1 ]; then
   zshrc="$target_zdotdir/.zshrc"
 else
   zshrc="$HOME/.zshrc"
@@ -170,7 +170,7 @@ fi
 
 # Add a VS Code compatibility shim in ~/.zshrc only when ZDOTDIR is honored
 need_shim=0
-if [ "$honor_zdotdir" -eq 1 ]; then
+if [ "$respect_zdotdir" -eq 1 ]; then
   need_shim=1
 fi
 if [ "$need_shim" -eq 1 ]; then
