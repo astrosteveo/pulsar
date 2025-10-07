@@ -19,7 +19,7 @@
 
 ## 🚀 Quick Start
 
-Add this to your `.zshrc`:
+Add this to your `.zshrc` (declarative, no manual clone/load needed):
 
 ```zsh
 # Setup vars
@@ -32,7 +32,7 @@ if [[ ! -e $ZSH/lib/pulsar.zsh ]]; then
     https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh
 fi
 
-# Declarative plugins (no manual clone/load needed)
+# Declarative plugins
 PULSAR_PATH=(
   # put executables on PATH
   # romkatv/zsh-bench
@@ -50,7 +50,7 @@ PULSAR_PLUGINS=(
 # Optional: speed up startup by compiling after load
 PULSAR_AUTOCOMPILE=1
 
-# Load Pulsar (auto-clones/loads based on arrays above)
+# Load Pulsar (auto-clones/auto-loads based on arrays above)
 source $ZSH/lib/pulsar.zsh
 ```
 
