@@ -17,20 +17,30 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/astrosteveo/pulsar/main/in
 ```
 
 Flags:
+
 - `--channel=edge` to enable edge notices
 - `--no-zdotdir` to keep existing ZDOTDIR layout
 
 Note: The installer is idempotent. Re-running updates or repairs the single Pulsar block and avoids duplicates or extra backups beyond the first insertion.
+
 What this does:
+
 - Creates ZDOTDIR (optional; defaults to `${XDG_CONFIG_HOME:-$HOME/.config}/zsh`) and appends an export to `~/.zshenv` if missing
 - Installs a minimal bootstrapper at `$ZDOTDIR/lib/pulsar-bootstrap.zsh`
 - Fetches and refreshes [pulsar.zsh](pulsar.zsh:1) automatically using curl `-z`
-- Safely appends a single guarded block to `~/.zshrc` (idempotent) using markers:
+- Safely appends a single guarded block to your zshrc (idempotent) using markers:
   - `# >>> pulsar >>>`
   - `# <<< pulsar <<<`
 - Backs up files before changes
 - Removes legacy Pulsar bootstrap from `~/.zshrc` (old non-guarded blocks, raw curl lines, and `source $ZSH/lib/pulsar.zsh`) to keep it clean
 - Supports stable/edge channels via `--channel`
+
+ZDOTDIR-aware behavior:
+
+- If ZDOTDIR is enabled (default), your primary shell config will be written to `$ZDOTDIR/.zshrc`.
+- For compatibility with tools that still read `~/.zshrc` directly (notably VS Code integrated terminal), the installer writes a tiny shim to `~/.zshrc` that, when `TERM_PROGRAM=vscode`, re-sources `$ZDOTDIR/.zshrc`. This prevents issues when your real `zshrc` is not located at `~/.zshrc`.
+  - The shim is wrapped with markers `# >>> pulsar-zdotdir-shim >>>` and `# <<< pulsar-zdotdir-shim <<<` and is maintained idempotently.
+  - If you already export ZDOTDIR in `~/.zshenv`, the shim will be installed even if you pass `--no-zdotdir`.
 
 Installer source: [install.sh](install.sh:1)
 
@@ -165,6 +175,7 @@ Pulsar respects these environment variables:
 - `PULSAR_AUTOCOMPILE` – If set, run `plugin-compile` after loading
 
 Update notifier variables:
+
 - `PULSAR_UPDATE_CHANNEL` – stable|edge|off
 - `PULSAR_UPDATE_CHECK_INTERVAL` – seconds
 - `PULSAR_UPDATE_NOTIFY` – 0/1

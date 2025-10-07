@@ -30,15 +30,18 @@ fi
 
 # Determine target ZDOTDIR path (used for bootstrapper)
 ZDOTDIR_DEFAULT="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-target_zdotdir="$ZDOTDIR_DEFAULT"
+# If ZDOTDIR is already set in the environment, honor it; otherwise default
+target_zdotdir="${ZDOTDIR:-$ZDOTDIR_DEFAULT}"
 
 # Ensure .zshenv exports ZDOTDIR, unless disabled (idempotent: append once, single backup)
 zshenv="$HOME/.zshenv"
 if [ "$no_zdotdir" -ne 1 ]; then
   line='export ZDOTDIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"'
   if [ -f "$zshenv" ]; then
-    if grep -Fxq "$line" "$zshenv"; then
-      : # already present
+    if grep -Eq '^export[[:space:]]+ZDOTDIR=' "$zshenv"; then
+      : # ZDOTDIR already managed by user or previous run
+    elif grep -Fxq "$line" "$zshenv"; then
+      : # exact line already present
     else
       ts="$(date -u +%Y%m%d%H%M%S)"
       cp -- "$zshenv" "$zshenv.pulsar.bak.$ts" 2>/dev/null || cp "$zshenv" "$zshenv.pulsar.bak.$ts"
@@ -46,7 +49,6 @@ if [ "$no_zdotdir" -ne 1 ]; then
       printf '%s\n' "Updated ~/.zshenv ZDOTDIR"
     fi
   else
-    ts="$(date -u +%Y%m%d%H%M%S)"
     printf '%s\n' "$line" >"$zshenv"
     printf '%s\n' "Updated ~/.zshenv ZDOTDIR"
   fi
@@ -108,14 +110,18 @@ $end_marker
 EOF
 )
 
-# Ensure ~/.zshrc contains exactly one guarded block via awk (no duplicates)
-zshrc="$HOME/.zshrc"
+## Decide which zshrc to manage as the primary file
+if [ "$no_zdotdir" -ne 1 ]; then
+  zshrc="$target_zdotdir/.zshrc"
+else
+  zshrc="$HOME/.zshrc"
+fi
 ts="$(date -u +%Y%m%d%H%M%S)"
 tmp_zshrc="${zshrc}.tmp.$$"
 
 # Detect if the block already exists to control backup behavior
 had_block=0
-if [ -f "$zshrc" ] && grep -q "^# >>> pulsar >>>\$" "$zshrc"; then
+if [ -f "$zshrc" ] && grep -q "^# >>> pulsar >>>$" "$zshrc"; then
   had_block=1
 fi
 
@@ -171,6 +177,56 @@ if [ -f "$zshrc" ]; then
 else
   mv -f -- "$tmp_zshrc" "$zshrc"
   printf '%s\n' "Inserted pulsar block into ~/.zshrc"
+fi
+
+# If ZDOTDIR is managed (by us) OR user has exported it in ~/.zshenv, add a VS Code compatibility shim in ~/.zshrc
+need_shim=0
+if [ "$no_zdotdir" -ne 1 ]; then
+  need_shim=1
+elif [ -f "$HOME/.zshenv" ] && grep -Eq '^export[[:space:]]+ZDOTDIR=' "$HOME/.zshenv"; then
+  need_shim=1
+fi
+if [ "$need_shim" -eq 1 ]; then
+  shim_rc="$HOME/.zshrc"
+  shim_tmp="${shim_rc}.tmp.$$"
+  shim_start="# >>> pulsar-zdotdir-shim >>>"
+  shim_end="# <<< pulsar-zdotdir-shim <<<"
+  SHIM_BLOCK=$(cat <<'EOS'
+# >>> pulsar-zdotdir-shim >>>
+# VS Code and some tools read ~/.zshrc directly. If ZDOTDIR points elsewhere, re-source the real config.
+if [ "${TERM_PROGRAM:-}" = "vscode" ] && [ -n "${ZDOTDIR:-}" ] && [ "$ZDOTDIR" != "$HOME" ] && [ -r "$ZDOTDIR/.zshrc" ]; then
+  . "$ZDOTDIR/.zshrc"
+fi
+# <<< pulsar-zdotdir-shim <<<
+EOS
+)
+  had_shim=0
+  if [ -f "$shim_rc" ] && grep -q "^$shim_start$" "$shim_rc"; then
+    had_shim=1
+  fi
+  if [ -f "$shim_rc" ]; then
+    awk -v gbeg="$shim_start" -v gend="$shim_end" '
+      $0==gbeg { inblk=1; next }
+      inblk==1 && $0==gend { inblk=0; next }
+      { print }
+    ' "$shim_rc" >"$shim_tmp"
+  else
+    : >"$shim_tmp"
+  fi
+  if [ -s "$shim_tmp" ]; then printf '\n' >>"$shim_tmp"; fi
+  printf '%s\n' "$SHIM_BLOCK" >>"$shim_tmp"
+  if [ -f "$shim_rc" ]; then
+    if cmp -s "$shim_tmp" "$shim_rc"; then
+      rm -f -- "$shim_tmp"
+    else
+      if [ "$had_shim" -eq 0 ]; then
+        cp -- "$shim_rc" "$shim_rc.pulsar-shim.bak.$ts" 2>/dev/null || cp "$shim_rc" "$shim_rc.pulsar-shim.bak.$ts"
+      fi
+      mv -f -- "$shim_tmp" "$shim_rc"
+    fi
+  else
+    mv -f -- "$shim_tmp" "$shim_rc"
+  fi
 fi
 
 
