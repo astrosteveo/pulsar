@@ -100,6 +100,9 @@ function pulsar__expand_shorthand {
   # OMZT:: -> ohmyzsh/ohmyzsh/themes/
   elif [[ "$spec" == OMZT::* ]]; then
     spec="ohmyzsh/ohmyzsh/themes/${spec#OMZT::}"
+  # PZT:: -> sorin-ionescu/prezto/modules/
+  elif [[ "$spec" == PZT::* ]]; then
+    spec="sorin-ionescu/prezto/modules/${spec#PZT::}"
   fi
   print -r -- "$spec"
 }

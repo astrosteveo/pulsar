@@ -45,6 +45,14 @@ ohmyzsh/ohmyzsh/themes/robbyrussell
 %
 ```
 
+PZT:: expands to sorin-ionescu/prezto/modules/
+
+```zsh
+% pulsar__expand_shorthand "PZT::git"
+sorin-ionescu/prezto/modules/git
+%
+```
+
 Non-shorthand specs pass through unchanged
 
 ```zsh
