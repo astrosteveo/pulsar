@@ -3,7 +3,9 @@
 # home:    https://github.com/astrosteveo/pulsar
 # license: https://unlicense.org
 # usage:   plugin-load $myplugins
-# version: 0.1.0
+# version: 0.3.2
+
+# Version tracking for update checks
 
 # Set variables.
 : ${PULSAR_HOME:=${XDG_CACHE_HOME:-~/.cache}/pulsar}
@@ -12,11 +14,13 @@ typeset -gHa _pulsar_zopts=(extended_glob glob_dots no_monitor)
 typeset -g PULSAR_FORCE_RECLONE=${PULSAR_FORCE_RECLONE:-}
 
 # Pulsar update notifier config
-typeset -g PULSAR_VERSION=${PULSAR_VERSION:-"v0.3.1"}  # current local version string
-typeset -g PULSAR_UPDATE_CHANNEL=${PULSAR_UPDATE_CHANNEL:-"stable"}  # stable|edge|off
+typeset -g PULSAR_VERSION=${PULSAR_VERSION:-"v0.3.2"}  # current local version string
+typeset -g PULSAR_UPDATE_CHANNEL=${PULSAR_UPDATE_CHANNEL:-"stable"}  # stable|unstable|off ("edge" accepted as alias)
 typeset -g PULSAR_UPDATE_CHECK_INTERVAL=${PULSAR_UPDATE_CHECK_INTERVAL:-86400}  # seconds
 typeset -g PULSAR_UPDATE_NOTIFY=${PULSAR_UPDATE_NOTIFY:-1}  # 1=on, 0=off
 typeset -g PULSAR_REPO=${PULSAR_REPO:-"astrosteveo/pulsar"} # Set the plugin upstream, set PULSAR_REPO to your fork if you wish to make Pulsar your own
+typeset -g PULSAR_UPDATE_PROMPT=${PULSAR_UPDATE_PROMPT:-1} # 1=prompt interactively to update when available
+typeset -g PULSAR_UPDATE_SHOW_NOTES=${PULSAR_UPDATE_SHOW_NOTES:-1} # 1=attempt to fetch and display release notes when interactive
 
 # Progress output: 1=on, 0=off, auto=on for TTY only
 typeset -g PULSAR_PROGRESS=${PULSAR_PROGRESS:-auto}
@@ -29,16 +33,24 @@ pulsar__cache_dir() { print -r -- "${XDG_CACHE_HOME:-$HOME/.cache}/pulsar"; }
 pulsar__state_file() { print -r -- "$(pulsar__cache_dir)/update_state"; }
 pulsar__now() { print -r -- ${EPOCHSECONDS:-$(date +%s)}; }
 
+##? Extract version string from a pulsar file (first match wins)
+function pulsar__extract_version {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local file=$1 ver
+  [[ -r $file ]] || return 1
+  ver=$(sed -n -e 's/^# version: //p' \
+             -e 's/^.*PULSAR_VERSION=.*\(v[0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p' \
+             -e 's/.*version.*\([0-9]\+\.[0-9]\+\.[0-9]\+\).*/\1/p' "$file" | head -n1)
+  [[ -z $ver ]] && return 1
+  # Normalize to vX.Y.Z if needed
+  if [[ $ver != v* && $ver =~ ^[0-9] ]]; then ver="v$ver"; fi
+  print -r -- "$ver"
+}
+
 # Progress/color helpers
 pulsar__isatty() { [[ -t 1 ]]; }
-pulsar__progress_on() {
-  local v=${PULSAR_PROGRESS:-auto}
-  [[ $v == 1 || ( $v == auto && $(pulsar__isatty; print $?) -eq 0 ) ]]
-}
-pulsar__color_on() {
-  local v=${PULSAR_COLOR:-auto}
-  [[ $v == 1 || ( $v == auto && $(pulsar__isatty; print $?) -eq 0 ) ]]
-}
+pulsar__progress_on() { local v=${PULSAR_PROGRESS:-auto}; [[ $v == 1 || ( $v == auto && pulsar__isatty ) ]]; }
+pulsar__color_on()    { local v=${PULSAR_COLOR:-auto};   [[ $v == 1 || ( $v == auto && pulsar__isatty ) ]]; }
 pulsar__cecho() {
   # usage: pulsar__cecho "text" [color_code]
   # color_code default 36 (cyan)
@@ -50,12 +62,28 @@ pulsar__cecho() {
 # Banner helpers (separate from progress)
 pulsar__banner_on() {
   local v=${PULSAR_BANNER:-auto}
-  [[ $v == 1 || ( $v == auto && $(pulsar__isatty; print $?) -eq 0 ) ]]
+  [[ $v == 1 || ( $v == auto && pulsar__isatty ) ]]
 }
 pulsar__banner() {
   local msg=$1 col=${2:-36}
   pulsar__banner_on || return 0
   if pulsar__color_on; then print -r -- "\e[${col}m$msg\e[0m"; else print -r -- "$msg"; fi
+}
+
+##? Print a colorized message if colors are enabled
+function pulsar__color_msg {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local col=$1; shift
+  local msg=$*
+  if pulsar__color_on; then
+    if command -v tput >/dev/null 2>&1; then
+      printf "%s%s%s\n" "$(tput setaf $col 2>/dev/null || echo)" "$msg" "$(tput sgr0 2>/dev/null || echo)"
+    else
+      printf "\e[%sm%s\e[0m\n" "$col" "$msg"
+    fi
+  else
+    print -r -- "$msg"
+  fi
 }
 
 ##? Clone zsh plugins in parallel.
@@ -177,27 +205,21 @@ function plugin-script {
   (( ! $+functions[zsh-defer] )) || src="zsh-defer ."
   for plugin in $@; do
     if [[ -n "$kind" ]]; then
-      # Support local absolute/relative paths as well as repo specs
+      # Support local absolute/relative paths as well as repo specs; compute target dir once
+      local _dir
+      if [[ "$plugin" == /* || "$plugin" == ./* || "$plugin" == ../* ]]; then
+        _dir=$plugin
+      else
+        _dir=$PULSAR_HOME/$plugin
+      fi
       if [[ "$kind" == "path" ]]; then
-        if [[ "$plugin" == /* || "$plugin" == ./* || "$plugin" == ../* ]]; then
-          if [[ -d "$plugin/bin" ]]; then
-            echo "path=(\\$path $plugin/bin)"
-          else
-            echo "path=(\\$path $plugin)"
-          fi
+        if [[ -d "$_dir/bin" ]]; then
+          echo "path=(\\$path $_dir/bin)"
         else
-          if [[ -d $PULSAR_HOME/$plugin/bin ]]; then
-            echo "path=(\\$path $PULSAR_HOME/$plugin/bin)"
-          else
-            echo "path=(\\$path $PULSAR_HOME/$plugin)"
-          fi
+          echo "path=(\\$path $_dir)"
         fi
       else
-        if [[ "$plugin" == /* || "$plugin" == ./* || "$plugin" == ../* ]]; then
-          echo "$kind=(\\$$kind $plugin)"
-        else
-          echo "$kind=(\\$$kind $PULSAR_HOME/$plugin)"
-        fi
+        echo "$kind=(\\$$kind $_dir)"
       fi
     else
       inits=(
@@ -279,6 +301,10 @@ function pulsar__read_state {
       _pstate[$k]="$v"
     done < "$f"
   fi
+  # Backward-compatibility: migrate legacy edge state to unstable state
+  if [[ -n "${_pstate[last_seen_edge_sha]-}" && -z "${_pstate[last_seen_unstable_sha]-}" ]]; then
+    _pstate[last_seen_unstable_sha]="${_pstate[last_seen_edge_sha]}"
+  fi
 }
 
 function pulsar__write_state {
@@ -291,9 +317,10 @@ function pulsar__write_state {
   tmp="${f}.$$"
   {
     [[ -n "${_pstate[last_check_epoch]-}" ]]      && print -r -- "last_check_epoch=${_pstate[last_check_epoch]}"
-    [[ -n "${_pstate[last_seen_edge_sha]-}" ]]    && print -r -- "last_seen_edge_sha=${_pstate[last_seen_edge_sha]}"
+  [[ -n "${_pstate[last_seen_unstable_sha]-}" ]]    && print -r -- "last_seen_unstable_sha=${_pstate[last_seen_unstable_sha]}"
     [[ -n "${_pstate[last_seen_stable_tag]-}" ]]  && print -r -- "last_seen_stable_tag=${_pstate[last_seen_stable_tag]}"
     [[ -n "${_pstate[last_seen_local_version]-}" ]] && print -r -- "last_seen_local_version=${_pstate[last_seen_local_version]}"
+    [[ -n "${_pstate[update_channel_migrated_from_edge]-}" ]] && print -r -- "update_channel_migrated_from_edge=${_pstate[update_channel_migrated_from_edge]}"
   } >| "$tmp" 2>/dev/null
   command mv -f -- "$tmp" "$f" 2>/dev/null || true
 }
@@ -332,7 +359,7 @@ function pulsar__notify_stable {
     yellow="$(tput setaf 3 2>/dev/null || true)"
     reset="$(tput sgr0 2>/dev/null || true)"
   fi
-  print -r -- "${yellow}Pulsar update available: ${current} → ${latest} (stable). Release notes: https://github.com/${PULSAR_REPO}/releases/tag/${latest}${reset}"
+  pulsar__color_msg 3 "Pulsar update available: ${current} → ${latest} (stable). Release notes: https://github.com/${PULSAR_REPO}/releases/tag/${latest}"
 }
 
 function pulsar__notify_local_update {
@@ -343,20 +370,68 @@ function pulsar__notify_local_update {
     yellow="$(tput setaf 3 2>/dev/null || true)"
     reset="$(tput sgr0 2>/dev/null || true)"
   fi
-  [[ "$current" =~ '^v?[0-9]+\.[0-9]+\.[0-9]+$' ]] || return 0
-  print -r -- "${yellow}Pulsar updated to ${current}. Release notes: https://github.com/${PULSAR_REPO}/releases/tag/${current}${reset}"
+  # Validate simple semver-like version string before printing
+  if ! print -r -- "$current" | command grep -Eq '^v?[0-9]+\.[0-9]+\.[0-9]+$'; then
+    return 0
+  fi
+  pulsar__color_msg 3 "Pulsar updated to ${current}. Release notes: https://github.com/${PULSAR_REPO}/releases/tag/${current}"
 }
 
-function pulsar__notify_edge {
+function pulsar__notify_unstable {
   emulate -L zsh; setopt local_options $_pulsar_zopts
   local latest_sha="$1"
-  local yellow="" reset=""
-  if command -v tput >/dev/null 2>&1; then
-    yellow="$(tput setaf 3 2>/dev/null || true)"
-    reset="$(tput sgr0 2>/dev/null || true)"
-  fi
   local short="${latest_sha[1,7]}"
-  print -r -- "${yellow}Pulsar update available on main (edge). Latest: ${short}. Compare: https://github.com/${PULSAR_REPO}/compare/${latest_sha}..main${reset}"
+  pulsar__color_msg 3 "Pulsar update available on main (unstable). Latest: ${short}. Compare: https://github.com/${PULSAR_REPO}/compare/${latest_sha}..main"
+}
+
+# Backwards compatibility wrapper for older callers
+function pulsar__notify_edge { pulsar__notify_unstable "$@" }
+
+##? Attempt to fetch and display release notes (interactive only)
+function pulsar__show_release_notes {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local tag="$1"
+  (( PULSAR_UPDATE_SHOW_NOTES )) || return 0
+  ! pulsar__isatty && return 0
+  command -v curl >/dev/null 2>&1 || return 0
+  # Prefer python3 for robust JSON parsing
+  if command -v python3 >/dev/null 2>&1; then
+    local body
+    body=$(command curl -s "https://api.github.com/repos/${PULSAR_REPO}/releases/tags/${tag}" 2>/dev/null \
+      | command python3 -c 'import sys,json
+try:
+  o=json.load(sys.stdin)
+  print(o.get("body",""))
+except Exception:
+  pass' 2>/dev/null)
+    if [[ -n $body ]]; then
+      echo "\n=== Release notes (${tag}) ==="
+      # Print a reasonable preview
+      print -r -- "${body}" | sed -n '1,40p'
+      echo "=== End release notes ===\n"
+    fi
+  fi
+}
+
+##? Prompt the user (interactive) to self-update now
+function pulsar__maybe_prompt_update {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local kind="$1" value="$2"
+  ! pulsar__isatty && return 0
+  # For stable releases show release notes first
+  if [[ "$kind" == "stable" && -n "$value" ]]; then
+    pulsar__show_release_notes "$value"
+  fi
+  (( PULSAR_UPDATE_PROMPT )) || return 0
+  # Ask the user if they'd like to update now
+  if read -q "REPLY?Pulsar: update available. Update now? (y/N) "; then
+    echo
+    if [[ $REPLY == [yY] ]]; then
+      pulsar-self-update
+    fi
+  else
+    echo
+  fi
 }
 
 function pulsar__check_update {
@@ -382,21 +457,42 @@ function pulsar__check_update {
     return 0
   fi
 
-  case "$PULSAR_UPDATE_CHANNEL" in
+  local _chan=${PULSAR_UPDATE_CHANNEL}
+  # If users still use legacy 'edge', warn and treat as alias for 'unstable'.
+  if [[ "$_chan" == "edge" ]]; then
+    # If this installation is already v1.x or newer, migrate automatically and persist a marker
+    if print -r -- "$PULSAR_VERSION" | command grep -Eq '^v[1-9]'; then
+      pulsar__color_msg 3 "Auto-migrating update channel from 'edge' to 'unstable' for Pulsar version $PULSAR_VERSION"
+      _chan=unstable
+      _pstate[update_channel_migrated_from_edge]=1
+      pulsar__write_state
+    else
+      # Pre-v1.0: warn about deprecation but accept as alias
+      if pulsar__isatty; then
+        pulsar__color_msg 3 "DEPRECATION: PULSAR_UPDATE_CHANNEL='edge' is deprecated. Use 'unstable' instead.\nThis will be auto-migrated at Pulsar v1.0 if you do not change it."
+      else
+        printf '%s\n' "Pulsar: WARNING: PULSAR_UPDATE_CHANNEL='edge' is deprecated; please use 'unstable'" >&2
+      fi
+      _chan=unstable
+    fi
+  fi
+  case "$_chan" in
     stable)
       local latest
       latest="$(pulsar__get_latest_tag)" || latest=""
       if [[ -n "$latest" && "$latest" != "$PULSAR_VERSION" ]]; then
         pulsar__notify_stable "$PULSAR_VERSION" "$latest"
         _pstate[last_seen_stable_tag]="$latest"
+        pulsar__maybe_prompt_update stable "$latest"
       fi
       ;;
-    edge)
+    unstable)
       local remote_sha
       remote_sha="$(pulsar__get_main_sha)" || remote_sha=""
-      if [[ -n "$remote_sha" && "$remote_sha" != "${_pstate[last_seen_edge_sha]-}" ]]; then
-        pulsar__notify_edge "$remote_sha"
-        _pstate[last_seen_edge_sha]="$remote_sha"
+      if [[ -n "$remote_sha" && "$remote_sha" != "${_pstate[last_seen_unstable_sha]-}" ]]; then
+        pulsar__notify_unstable "$remote_sha"
+        _pstate[last_seen_unstable_sha]="$remote_sha"
+        pulsar__maybe_prompt_update unstable "$remote_sha"
       fi
       ;;
     *)
@@ -515,22 +611,198 @@ function pulsar-self-update {
     base=${XDG_CONFIG_HOME:-$HOME/.config}/zsh
   fi
   local dest="$base/lib/pulsar.zsh"
+  echo "Updating Pulsar from ${PULSAR_REPO:-astrosteveo/pulsar}..."
+
   if ! command -v curl >/dev/null 2>&1; then
     echo >&2 "pulsar-self-update: curl not found; skipping self-update."
+    return 1
+  fi
+
+  local url="https://raw.githubusercontent.com/${PULSAR_REPO:-astrosteveo/pulsar}/main/pulsar.zsh"
+  local temp_file=$(mktemp)
+
+  # Try to detect current version from the file
+  local current_version="unknown"
+  current_version=$(pulsar__extract_version "$dest" 2>/dev/null || echo "unknown")
+
+  # First download to a temp file to check if there's an update
+  if ! command curl -fsSL -o "$temp_file" "$url"; then
+    echo "Failed to download update from $url"
+    rm -f "$temp_file"
+    return 1
+  fi
+
+  # Try to detect new version from the downloaded file using the helper
+  local new_version="unknown"
+  new_version=$(pulsar__extract_version "$temp_file" 2>/dev/null || echo "unknown")
+
+  # Check if we actually got a valid pulsar.zsh file - just check for key functions
+  if [[ $(grep -c "plugin-clone" "$temp_file") -eq 0 ]]; then
+    echo "Invalid Pulsar file downloaded (missing core functions)"
+    rm -f "$temp_file"
+    return 1
+  fi
+
+  # Always show what versions we're working with
+  echo "Current version: $current_version"
+  echo "New version: $new_version"
+
+  # If we have version information and they match, no need to update
+  if [[ "$current_version" != "unknown" && "$new_version" != "unknown" && "$current_version" == "$new_version" ]]; then
+    echo "Already at latest version, no update needed"
+    rm -f "$temp_file"
     return 0
   fi
-  local url="https://raw.githubusercontent.com/${PULSAR_REPO}/main/pulsar.zsh"
-  if [[ -f "$dest" ]]; then
-    command curl -fsSL -z "$dest" -o "$dest" "$url" || return 0
-  else
-    command curl -fsSL -o "$dest" "$url" || return 0
+
+  # If the current file is missing, we're doing a fresh install
+  if [[ ! -f "$dest" ]]; then
+    echo "Installing Pulsar for the first time"
+  fi  # Copy the new version to the destination
+  if ! mkdir -p "$(dirname "$dest")" || ! cp "$temp_file" "$dest"; then
+    echo "Failed to install update to $dest"
+    rm -f "$temp_file"
+    return 1
   fi
-  source "$dest" 2>/dev/null || true
+
+  rm -f "$temp_file"
+
+  if command -v tput >/dev/null 2>&1; then
+    if [[ "$current_version" != "unknown" && "$new_version" != "unknown" ]]; then
+      printf "%sSuccessfully updated Pulsar from %s to %s%s\n" "$(tput setaf 2)" "$current_version" "$new_version" "$(tput sgr0)"
+    else
+      printf "%sSuccessfully updated Pulsar to latest version%s\n" "$(tput setaf 2)" "$(tput sgr0)"
+    fi
+  else
+    if [[ "$current_version" != "unknown" && "$new_version" != "unknown" ]]; then
+      echo "Successfully updated Pulsar from $current_version to $new_version"
+    else
+      echo "Successfully updated Pulsar to latest version"
+    fi
+  fi
+
+  echo "Reloading Pulsar..."
+
+  # Source the new version
+  if ! source "$dest" 2>/dev/null; then
+    echo "Failed to source updated Pulsar"
+    return 1
+  fi
+
+  echo "✓ Pulsar self-update complete!"
+  return 0
 }
 
 ##? Update Pulsar and plugins.
 function pulsar-update {
   emulate -L zsh; setopt local_options $_pulsar_zopts
-  pulsar-self-update || true
+  echo "=== Pulsar Self-Update ==="
+  if pulsar-self-update; then
+    echo "=== Pulsar core update complete ==="
+  else
+    echo "=== Pulsar core update skipped ==="
+  fi
+
+  echo ""
+  echo "=== Plugin Updates ==="
   plugin-update
+}
+
+##? Migrate user config: optionally replace legacy 'edge' with 'unstable' in the managed pulsar block
+function pulsar-migrate-config {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local apply=0 zshrc target start_marker end_marker tmp backup
+  while (( $# )); do
+    case $1 in
+      --apply) apply=1 ;;
+      -h|--help) echo "Usage: pulsar-migrate-config [--apply]"; return 0 ;;
+      *) echo "Invalid option $1"; return 2 ;;
+    esac
+    shift
+  done
+  # Find the managed pulsar block location like the installer
+  if [[ -n ${ZDOTDIR-} && $ZDOTDIR != $HOME ]]; then
+    zshrc=${ZDOTDIR}/.zshrc
+  else
+    zshrc=$HOME/.zshrc
+  fi
+  start_marker="# >>> pulsar >>>"
+  end_marker="# <<< pulsar <<<"
+  if [[ ! -f $zshrc ]]; then
+    echo "No $zshrc found"; return 0
+  fi
+  tmp=$(mktemp)
+  # Extract current block and show diff of proposed change
+  sed -n "/^${start_marker}\$/,/^${end_marker}\$/p" "$zshrc" > "$tmp.block" 2>/dev/null || true
+  if ! grep -q "PULSAR_UPDATE_CHANNEL=.*edge" "$tmp.block" 2>/dev/null; then
+    echo "No legacy 'edge' setting found in pulsar block in $zshrc"; rm -f "$tmp.block"; return 0
+  fi
+  echo "Found legacy 'edge' in pulsar block at $zshrc"
+  echo "Proposed change: replace PULSAR_UPDATE_CHANNEL=...edge with PULSAR_UPDATE_CHANNEL=unstable"
+  if (( apply )); then
+    backup="$zshrc.pulsar.migrate.bak.$(date -u +%Y%m%d%H%M%S)"
+    cp -- "$zshrc" "$backup" 2>/dev/null || cp "$zshrc" "$backup"
+    # perform replacement only inside the block
+    awk -v start="$start_marker" -v end="$end_marker" '
+      { print_line = 1 }
+      $0 == start { inblock=1; print_line=1 }
+      inblock && /PULSAR_UPDATE_CHANNEL=.*edge/ { sub(/edge/,"unstable") }
+      { print }
+      $0 == end { inblock=0 }
+    ' "$zshrc" > "$tmp" && mv -f "$tmp" "$zshrc"
+    echo "Applied change to $zshrc (backup at $backup)"
+  else
+    echo "Run 'pulsar-migrate-config --apply' to modify $zshrc (backup will be created)."
+  fi
+  rm -f "$tmp.block" 2>/dev/null || true
+}
+
+##? Benchmark helper: runs multiple iterations and reports mean/median startup time
+function pulsar-benchmark {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local file=${1:-"$ZSH/lib/pulsar.zsh"}
+  local iterations=${2:-10}
+  if [[ ! -f $file ]]; then echo "Benchmark target not found: $file"; return 1; fi
+
+  echo "Benchmarking $file (${iterations} iterations)..."
+  local -a times
+  local i start end elapsed_ms
+
+  for (( i=1; i<=iterations; i++ )); do
+    start=$(date +%s%3N 2>/dev/null || date +%s000)
+    ZDOTDIR=$ZDOTDIR HOME=$HOME zsh -fc "source $file" >/dev/null 2>&1 || true
+    end=$(date +%s%3N 2>/dev/null || date +%s000)
+    elapsed_ms=$((end - start))
+    times+=($elapsed_ms)
+    printf "."
+  done
+  echo ""
+
+  # Calculate statistics
+  local sum=0 min=${times[1]} max=${times[1]}
+  for elapsed_ms in $times; do
+    (( sum += elapsed_ms ))
+    (( elapsed_ms < min )) && min=$elapsed_ms
+    (( elapsed_ms > max )) && max=$elapsed_ms
+  done
+  local mean=$((sum / iterations))
+
+  # Calculate median
+  local -a sorted
+  sorted=(${(n)times})  # numeric sort
+  local median
+  if (( iterations % 2 == 1 )); then
+    median=${sorted[$(( (iterations + 1) / 2 ))]}
+  else
+    local mid1=${sorted[$(( iterations / 2 ))]}
+    local mid2=${sorted[$(( iterations / 2 + 1 ))]}
+    median=$(( (mid1 + mid2) / 2 ))
+  fi
+
+  # Report results
+  printf "\nResults for %s:\n" "$file"
+  printf "  Iterations: %d\n" "$iterations"
+  printf "  Mean:       %d ms\n" "$mean"
+  printf "  Median:     %d ms\n" "$median"
+  printf "  Min:        %d ms\n" "$min"
+  printf "  Max:        %d ms\n" "$max"
 }

@@ -37,7 +37,7 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/astrosteveo/pulsar/main/in
 
 Flags:
 
-- `--channel=edge` – opt into edge update notices
+- `--channel=unstable` – opt into unstable update notices (legacy `edge` accepted)
 - `--no-zdotdir` – keep your existing ZDOTDIR layout (no extra shim)
 
 What the installer does:
@@ -67,7 +67,7 @@ fi
 export PULSAR_PROGRESS=auto
 export PULSAR_COLOR=auto
 export PULSAR_BANNER=auto
-export PULSAR_UPDATE_CHANNEL=stable  # stable|edge|off
+export PULSAR_UPDATE_CHANNEL=stable  # stable|unstable|off ("edge" accepted)
 export PULSAR_UPDATE_NOTIFY=1
 export PULSAR_REPO="astrosteveo/pulsar" # point to a fork if you want
 
@@ -131,7 +131,12 @@ Autorun and output:
 
 Update notifier:
 
-- `PULSAR_UPDATE_CHANNEL` – `stable|edge|off` (default: `stable`)
+- `PULSAR_UPDATE_CHANNEL` – `stable|unstable|off` (default: `stable`). The old name `edge` is still accepted as an alias for `unstable`.
+
+Deprecation note for `edge`
+
+- The historically-used channel name `edge` is now deprecated in favor of `unstable`. Pulsar will continue to accept `edge` as an alias for `unstable` for now and will show a one-time deprecation notice when `edge` is in use.
+- When Pulsar reaches v1.0, if your config still uses `edge` we will automatically migrate it to `unstable` for you and write a small marker to Pulsar's cache to record the migration. You are encouraged to update your `.zshrc` now to use `unstable` instead.
 - `PULSAR_UPDATE_CHECK_INTERVAL` – seconds between checks (default: `86400`)
 - `PULSAR_UPDATE_NOTIFY` – `0|1` enable notices (default: `1`)
 - `PULSAR_REPO` – `owner/repo` for upstream checks and self-update (default: `astrosteveo/pulsar`)
@@ -142,12 +147,19 @@ Advanced:
 
 ## Updates and self-update
 
-Pulsar can notify you about new releases (stable) or new commits on `main` (edge). Notices are cached under `${XDG_CACHE_HOME:-$HOME/.cache}/pulsar` to avoid frequent checks. You’ll also see a one-time message when your local Pulsar version changes.
+Pulsar can notify you about new releases (stable) or new commits on `main` (unstable). Notices are cached under `${XDG_CACHE_HOME:-$HOME/.cache}/pulsar` to avoid frequent checks. You’ll also see a one-time message when your local Pulsar version changes. The legacy name `edge` is accepted as an alias for `unstable`.
 
 Handy commands:
 
 - `pulsar-self-update` – fetches latest `pulsar.zsh` from `PULSAR_REPO` and re-sources it (uses curl if available)
 - `pulsar-update` – self-update + `plugin-update`
+
+Interactive update behavior
+
+- When Pulsar detects a newer release (stable) or a new `main` commit (unstable) it will print a concise notification.
+- On interactive shells Pulsar will optionally (default: enabled) prompt you to perform the self-update immediately. Set `PULSAR_UPDATE_PROMPT=0` to disable the interactive prompt.
+- If enabled and available, Pulsar will attempt to fetch and display the release notes for stable releases before prompting. This requires `curl` and `python3` to be present.
+- Control whether release notes are fetched with `PULSAR_UPDATE_SHOW_NOTES=0|1`.
 
 ## ZDOTDIR policy and VS Code
 

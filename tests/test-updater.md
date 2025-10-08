@@ -41,13 +41,13 @@ ok
 %
 ```
 
-Force edge channel notifier when main advances (mocked)
+Force unstable channel notifier when main advances (mocked)
 
 ```zsh
 % export TEST_HOME=$T_TEMPDIR/home2
 % mkdir -p $TEST_HOME
 % export XDG_CACHE_HOME=$T_TEMPDIR/.cache2
-% export PULSAR_UPDATE_NOTIFY=1 PULSAR_UPDATE_CHANNEL=edge PULSAR_UPDATE_CHECK_INTERVAL=0
+% export PULSAR_UPDATE_NOTIFY=1 PULSAR_UPDATE_CHANNEL=unstable PULSAR_UPDATE_CHECK_INTERVAL=0
 % function pulsar__get_main_sha { echo deadbeefcafebabe000000000000000000000000 }
 % ZDOTDIR=$ZDOTDIR HOME=$TEST_HOME zsh -fc 'source ./pulsar.zsh' | grep -q "Pulsar update available on main" && echo ok
 ok

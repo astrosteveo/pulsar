@@ -6,7 +6,7 @@ set -eu
 
 # Portable "pipefail" approach: avoid pipelines and check command statuses explicitly.
 
-usage() { printf '%s\n' "Usage: $0 [--channel=stable|edge] [--no-zdotdir]"; }
+usage() { printf '%s\n' "Usage: $0 [--channel=stable|unstable] [--no-zdotdir]"; }
 
 channel="stable"
 no_zdotdir=0
@@ -14,7 +14,8 @@ no_zdotdir=0
 for arg in "$@"; do
   case "$arg" in
     --channel=stable) channel="stable" ;;
-    --channel=edge) channel="edge" ;;
+  --channel=edge) channel="edge" ;;
+  --channel=unstable) channel="unstable" ;;
     --channel=*) printf >&2 '%s\n' "Error: invalid channel '${arg#--channel=}'"; usage; exit 2 ;;
     --no-zdotdir) no_zdotdir=1 ;;
     -h|--help) usage; exit 0 ;;

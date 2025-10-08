@@ -6,15 +6,19 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 ## [Unreleased]
 
+## [0.4.0] - 2025-10-07
+
 ### Added
 
 - Unified, ordered plugin list via `PULSAR_PLUGINS` supporting prefixes `path:` and `fpath:` and pinning with `@ref`. Load order now follows the array order.
+- Version tracking via `PULSAR_VERSION` variable to enable better version comparison
 
 ### Changed
 
 - Backward compatible: legacy `PULSAR_PATH` and `PULSAR_FPATH` continue to work; when present they take precedence over ordered mode.
 - Installer `.zshrc` block now showcases the unified list.
 - README modernized to reflect unified list, ZDOTDIR policy, and update notifier.
+- Improved `pulsar-self-update` with better feedback and error handling to clearly show when updates succeed or fail
 
 ## [0.3.1] - 2025-10-07
 
@@ -61,7 +65,8 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 - Initial Pulsar extraction and documentation.
 
-[Unreleased]: https://github.com/astrosteveo/pulsar/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/astrosteveo/pulsar/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/astrosteveo/pulsar/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/astrosteveo/pulsar/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/astrosteveo/pulsar/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/astrosteveo/pulsar/compare/v0.1.0...v0.2.0
