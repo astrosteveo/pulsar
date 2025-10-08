@@ -65,10 +65,10 @@ Cloning ohmyzsh/ohmyzsh/plugins/git...
 %
 ```
 
-Shorthand shows full expanded spec in cloning message
+Shorthand shows original spec in cloning message
 
 ```zsh
-% plugin-clone OMZP::docker 2>&1 | grep -o "Cloning.*"
+% PULSAR_FORCE_RECLONE=1 plugin-clone OMZP::docker 2>&1 | grep -o "Cloning.*"
 Cloning OMZP::docker...
 %
 ```
