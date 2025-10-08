@@ -611,47 +611,89 @@ function pulsar-self-update {
     base=${XDG_CONFIG_HOME:-$HOME/.config}/zsh
   fi
   local dest="$base/lib/pulsar.zsh"
-  echo "Updating Pulsar from ${PULSAR_REPO:-astrosteveo/pulsar}..."
 
   if ! command -v curl >/dev/null 2>&1; then
     echo >&2 "pulsar-self-update: curl not found; skipping self-update."
     return 1
   fi
 
-  local url="https://raw.githubusercontent.com/${PULSAR_REPO:-astrosteveo/pulsar}/main/pulsar.zsh"
+  # Determine channel and source URL
+  local _chan=${PULSAR_UPDATE_CHANNEL:-stable}
+  [[ "$_chan" == "edge" ]] && _chan=unstable  # Handle legacy alias
+  local url branch_or_tag current_id new_id
+
+  case "$_chan" in
+    stable)
+      echo "Updating Pulsar from ${PULSAR_REPO:-astrosteveo/pulsar} (stable channel)..."
+      # Get latest stable tag
+      branch_or_tag=$(pulsar__get_latest_tag 2>/dev/null)
+      if [[ -z "$branch_or_tag" ]]; then
+        echo "Failed to determine latest stable release; falling back to main"
+        branch_or_tag=main
+      fi
+      url="https://raw.githubusercontent.com/${PULSAR_REPO:-astrosteveo/pulsar}/${branch_or_tag}/pulsar.zsh"
+      current_id=$(pulsar__extract_version "$dest" 2>/dev/null || echo "unknown")
+      ;;
+    unstable)
+      echo "Updating Pulsar from ${PULSAR_REPO:-astrosteveo/pulsar} (unstable channel: main branch)..."
+      branch_or_tag=main
+      url="https://raw.githubusercontent.com/${PULSAR_REPO:-astrosteveo/pulsar}/main/pulsar.zsh"
+      # For unstable, show commit SHA if available
+      current_id=$(pulsar__get_main_sha 2>/dev/null)
+      [[ -n "$current_id" ]] && current_id="${current_id[1,7]}" || current_id="unknown"
+      ;;
+    off)
+      echo "Note: Update channel is 'off', but proceeding with self-update from main..."
+      branch_or_tag=main
+      url="https://raw.githubusercontent.com/${PULSAR_REPO:-astrosteveo/pulsar}/main/pulsar.zsh"
+      current_id="unknown"
+      ;;
+    *)
+      echo "Unknown update channel '$_chan'; using main branch"
+      branch_or_tag=main
+      url="https://raw.githubusercontent.com/${PULSAR_REPO:-astrosteveo/pulsar}/main/pulsar.zsh"
+      current_id="unknown"
+      ;;
+  esac
+
   local temp_file=$(mktemp)
 
-  # Try to detect current version from the file
-  local current_version="unknown"
-  current_version=$(pulsar__extract_version "$dest" 2>/dev/null || echo "unknown")
-
-  # First download to a temp file to check if there's an update
+  # Download to temp file
   if ! command curl -fsSL -o "$temp_file" "$url"; then
     echo "Failed to download update from $url"
     rm -f "$temp_file"
     return 1
   fi
 
-  # Try to detect new version from the downloaded file using the helper
-  local new_version="unknown"
-  new_version=$(pulsar__extract_version "$temp_file" 2>/dev/null || echo "unknown")
-
-  # Check if we actually got a valid pulsar.zsh file - just check for key functions
+  # Validate downloaded file
   if [[ $(grep -c "plugin-clone" "$temp_file") -eq 0 ]]; then
     echo "Invalid Pulsar file downloaded (missing core functions)"
     rm -f "$temp_file"
     return 1
   fi
 
-  # Always show what versions we're working with
-  echo "Current version: $current_version"
-  echo "New version: $new_version"
+  # Determine new version/commit
+  if [[ "$_chan" == "stable" ]]; then
+    new_id=$(pulsar__extract_version "$temp_file" 2>/dev/null || echo "unknown")
+  elif [[ "$_chan" == "unstable" ]]; then
+    new_id=$(pulsar__get_main_sha 2>/dev/null)
+    [[ -n "$new_id" ]] && new_id="${new_id[1,7]}" || new_id="latest"
+  else
+    new_id="unknown"
+  fi
 
-  # If we have version information and they match, no need to update
-  if [[ "$current_version" != "unknown" && "$new_version" != "unknown" && "$current_version" == "$new_version" ]]; then
-    echo "Already at latest version, no update needed"
-    rm -f "$temp_file"
-    return 0
+  # Show what we're working with
+  if [[ "$_chan" == "stable" ]]; then
+    echo "Current version: $current_id"
+    echo "New version: $new_id"
+    # Skip update if versions match
+    if [[ "$current_id" != "unknown" && "$new_id" != "unknown" && "$current_id" == "$new_id" ]]; then
+      echo "Already at latest version, no update needed"
+      rm -f "$temp_file"
+      return 0
+    fi
+  else
+    echo "Updating to: $new_id"
   fi
 
   # If the current file is missing, we're doing a fresh install
@@ -666,15 +708,20 @@ function pulsar-self-update {
 
   rm -f "$temp_file"
 
+  # Success message
   if command -v tput >/dev/null 2>&1; then
-    if [[ "$current_version" != "unknown" && "$new_version" != "unknown" ]]; then
-      printf "%sSuccessfully updated Pulsar from %s to %s%s\n" "$(tput setaf 2)" "$current_version" "$new_version" "$(tput sgr0)"
+    if [[ "$current_id" != "unknown" && "$new_id" != "unknown" && "$_chan" == "stable" ]]; then
+      printf "%sSuccessfully updated Pulsar from %s to %s (stable)%s\n" "$(tput setaf 2)" "$current_id" "$new_id" "$(tput sgr0)"
+    elif [[ "$_chan" == "unstable" ]]; then
+      printf "%sSuccessfully updated Pulsar to commit %s (unstable)%s\n" "$(tput setaf 2)" "$new_id" "$(tput sgr0)"
     else
       printf "%sSuccessfully updated Pulsar to latest version%s\n" "$(tput setaf 2)" "$(tput sgr0)"
     fi
   else
-    if [[ "$current_version" != "unknown" && "$new_version" != "unknown" ]]; then
-      echo "Successfully updated Pulsar from $current_version to $new_version"
+    if [[ "$current_id" != "unknown" && "$new_id" != "unknown" && "$_chan" == "stable" ]]; then
+      echo "Successfully updated Pulsar from $current_id to $new_id (stable)"
+    elif [[ "$_chan" == "unstable" ]]; then
+      echo "Successfully updated Pulsar to commit $new_id (unstable)"
     else
       echo "Successfully updated Pulsar to latest version"
     fi
