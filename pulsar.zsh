@@ -227,6 +227,25 @@ function plugin-clone {
 
 ##? Load zsh plugins.
 function plugin-load {
+  # Check if loading OMZ plugins and auto-initialize completions if needed
+  local needs_compinit=0
+  local spec
+  for spec in $@; do
+    local expanded=$(pulsar__expand_shorthand "$spec")
+    if [[ "$expanded" == ohmyzsh/ohmyzsh/* ]] || [[ "$spec" == OMZP::* ]] || [[ "$spec" == OMZL::* ]] || [[ "$spec" == OMZT::* ]]; then
+      needs_compinit=1
+      break
+    fi
+  done
+  
+  # Auto-initialize completions if loading OMZ plugins and compinit hasn't been called
+  if (( needs_compinit )) && (( ! $+functions[compdef] )); then
+    if pulsar__progress_on; then
+      pulsar__cecho "Pulsar: Initializing Zsh completions (required for Oh-My-Zsh plugins)..." 33
+    fi
+    autoload -Uz compinit && compinit -i
+  fi
+  
   source <(plugin-script $@)
 }
 

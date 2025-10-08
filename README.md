@@ -111,6 +111,8 @@ PULSAR_PLUGINS=(
 - `OMZL::` → `ohmyzsh/ohmyzsh/lib/`
 - `OMZT::` → `ohmyzsh/ohmyzsh/themes/`
 
+**Note:** Pulsar automatically initializes Zsh completions (`compinit`) when loading Oh-My-Zsh plugins to prevent `compdef: command not found` errors.
+
 ### Version Pinning
 
 Pin plugins to specific versions:

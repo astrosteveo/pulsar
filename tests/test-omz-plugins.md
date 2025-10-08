@@ -73,6 +73,20 @@ Cloning OMZP::docker...
 %
 ```
 
+## Test compinit auto-initialization
+
+Loading OMZ plugins automatically initializes completions
+
+```zsh
+% (( $+functions[compdef] )) && echo "compdef exists" || echo "compdef missing"
+compdef missing
+% plugin-load OMZP::git 2>&1 | grep -q "Initializing Zsh completions" && echo "compinit called" || echo "no message"
+compinit called
+% (( $+functions[compdef] )) && echo "compdef exists" || echo "compdef missing"
+compdef exists
+%
+```
+
 ## Teardown
 
 ```zsh
