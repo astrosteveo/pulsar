@@ -240,7 +240,7 @@ function plugin-load {
   local spec
   for spec in $@; do
     local expanded=$(pulsar__expand_shorthand "$spec")
-    if [[ "$expanded" == ohmyzsh/ohmyzsh/* ]] || [[ "$spec" == OMZP::* ]] || [[ "$spec" == OMZL::* ]] || [[ "$spec" == OMZT::* ]]; then
+    if [[ "$expanded" == ohmyzsh/ohmyzsh/* ]]; then
       needs_compinit=1
       break
     fi
