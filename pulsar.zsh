@@ -87,20 +87,50 @@ function pulsar__color_msg {
   fi
 }
 
+##? Expand shorthand aliases for common plugin formats
+function pulsar__expand_shorthand {
+  emulate -L zsh; setopt local_options $_pulsar_zopts
+  local spec="$1"
+  # OMZP:: -> ohmyzsh/ohmyzsh/plugins/
+  if [[ "$spec" == OMZP::* ]]; then
+    spec="ohmyzsh/ohmyzsh/plugins/${spec#OMZP::}"
+  # OMZL:: -> ohmyzsh/ohmyzsh/lib/
+  elif [[ "$spec" == OMZL::* ]]; then
+    spec="ohmyzsh/ohmyzsh/lib/${spec#OMZL::}"
+  # OMZT:: -> ohmyzsh/ohmyzsh/themes/
+  elif [[ "$spec" == OMZT::* ]]; then
+    spec="ohmyzsh/ohmyzsh/themes/${spec#OMZT::}"
+  fi
+  print -r -- "$spec"
+}
+
 ##? Clone zsh plugins in parallel.
 function plugin-clone {
   emulate -L zsh; setopt local_options $_pulsar_zopts
-  local spec repo ref plugdir processed_repo repo_part r
-  local -A refmap
-  local -Ua allrepos repos
+  local spec repo ref plugdir processed_repo repo_part r original_spec
+  local -A refmap specmap
+  local -Ua allrepos repos all_specs
   local -i installed_count=0 updated_count=0
 
   # Ensure base directory exists
   [[ -d $PULSAR_HOME ]] || command mkdir -p -- $PULSAR_HOME
 
-  # Remove bare words ${(M)@:#*/*} and paths with leading slash ${@:#/*}.
-  # Then split/join to keep the 2-part user/repo form to bulk-clone repos.
-  for spec in ${${(M)@:#*/*}:#/*}; do
+  # First expand all shorthand specs, then filter for remote repos
+  for spec in $@; do
+    # Expand shorthand first
+    local expanded_spec=$(pulsar__expand_shorthand "$spec")
+    # Keep specs that look like repos (contain /) and aren't local paths
+    if [[ "$expanded_spec" == */* && "$expanded_spec" != /* ]]; then
+      all_specs+="$spec"
+    fi
+  done
+  
+  # Process expanded specs
+  for spec in $all_specs; do
+    # Save original spec before expansion for better error messages
+    original_spec="$spec"
+    spec=$(pulsar__expand_shorthand "$spec")
+    
     ref=${spec##*@}
     repo=${spec%@*}
 
@@ -109,6 +139,9 @@ function plugin-clone {
       # Normalize to owner/repo
       processed_repo=${(@j:/:)${(@s:/:)repo_part}[1,2]}
       allrepos+=($processed_repo)
+      
+      # Map original spec to processed repo for better messages
+      specmap[$processed_repo]="$original_spec"
 
       # Map ref if provided as @ref to normalized repo
       if [[ $repo_part == *"@"* ]]; then
@@ -130,28 +163,38 @@ function plugin-clone {
   # Clone missing repos
   for r in $repos; do
     plugdir=$PULSAR_HOME/$r
+    # Get the display spec (original with subdirectory if provided)
+    local display_spec="${specmap[$r]:-$r}"
+    # Remove @ref from display for cleaner output
+    display_spec="${display_spec%@*}"
+    
     # progress message per repo
     if [[ ! -d $plugdir ]]; then
-      pulsar__cecho "Cloning ${r}..." 36
+      pulsar__cecho "Cloning ${display_spec}..." 36
       (( installed_count++ ))
     elif [[ -d $plugdir/.git ]]; then
-      pulsar__cecho "Updating ${r}..." 36
+      pulsar__cecho "Updating ${display_spec}..." 36
     else
-      pulsar__cecho "Pulsar: Preparing $r" 36
+      pulsar__cecho "Pulsar: Preparing ${display_spec}" 36
     fi
     if [[ ! -d $plugdir ]]; then
       (
         command mkdir -p -- ${plugdir:h}
         local url="${PULSAR_GITURL:-https://github.com/}${r}.git"
-        command git clone -q --depth 1 --recursive --shallow-submodules "$url" "$plugdir" || return
+        if ! command git clone -q --depth 1 --recursive --shallow-submodules "$url" "$plugdir" 2>/dev/null; then
+          echo >&2 "Pulsar: Failed to clone ${display_spec} (repository may not exist)"
+          return 1
+        fi
         # If a ref was provided for this repo, fetch and checkout it
         if [[ -n ${refmap[$r]-} ]]; then
           local _ref=${refmap[$r]}
           # Try fast paths: branch/tag names
           if ! command git -C $plugdir checkout -q --detach --force $_ref 2>/dev/null; then
             # Fallback: fetch the ref (commit or remote ref) shallowly then checkout
-            command git -C $plugdir fetch -q --depth 1 origin $_ref || true
-            command git -C $plugdir checkout -q --detach --force ${_ref} 2>/dev/null || true
+            command git -C $plugdir fetch -q --depth 1 origin $_ref 2>/dev/null || true
+            if ! command git -C $plugdir checkout -q --detach --force ${_ref} 2>/dev/null; then
+              echo >&2 "Pulsar: Warning: Failed to checkout ref '${_ref}' for ${display_spec}"
+            fi
           fi
         fi
         plugin-compile $plugdir || true
@@ -202,16 +245,19 @@ function plugin-script {
     shift
   done
 
-  local plugin src="source" inits=()
+  local plugin src="source" inits=() expanded_plugin
   (( ! $+functions[zsh-defer] )) || src="zsh-defer ."
   for plugin in $@; do
+    # Expand shorthand aliases
+    expanded_plugin=$(pulsar__expand_shorthand "$plugin")
+    
     if [[ -n "$kind" ]]; then
       # Support local absolute/relative paths as well as repo specs; compute target dir once
       local _dir
-      if [[ "$plugin" == /* || "$plugin" == ./* || "$plugin" == ../* ]]; then
-        _dir=$plugin
+      if [[ "$expanded_plugin" == /* || "$expanded_plugin" == ./* || "$expanded_plugin" == ../* ]]; then
+        _dir=$expanded_plugin
       else
-        _dir=$PULSAR_HOME/$plugin
+        _dir=$PULSAR_HOME/$expanded_plugin
       fi
       if [[ "$kind" == "path" ]]; then
         if [[ -d "$_dir/bin" ]]; then
@@ -223,14 +269,20 @@ function plugin-script {
         echo "$kind=(\\$$kind $_dir)"
       fi
     else
+      # For plugins with subdirectories (e.g., ohmyzsh/ohmyzsh/plugins/git),
+      # look for init files in the full path, not just based on the tail
       inits=(
-        {$ZPLUGINDIR,$PULSAR_HOME}/$plugin/${plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        $PULSAR_HOME/$plugin/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        $PULSAR_HOME/$plugin(N)
-        ${plugin}/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        ${plugin}(N)
+        {$ZPLUGINDIR,$PULSAR_HOME}/$expanded_plugin/${expanded_plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
+        $PULSAR_HOME/$expanded_plugin/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
+        $PULSAR_HOME/$expanded_plugin(N)
+        ${expanded_plugin}/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
+        ${expanded_plugin}(N)
       )
-      (( $#inits )) || { echo >&2 "No plugin init found '$plugin'." && continue }
+      if (( ! $#inits )); then
+        echo >&2 "Pulsar: No plugin init found for '$plugin' (expanded to '$expanded_plugin')."
+        echo >&2 "Pulsar: Looked in: $PULSAR_HOME/$expanded_plugin"
+        continue
+      fi
       plugin=$inits[1]
       echo "fpath=(\$fpath $plugin:h)"
       echo "$src $plugin"
@@ -533,6 +585,8 @@ function pulsar__check_update {
       elif [[ "$spec" == path:* ]]; then
         _kind=path; _target="${spec#path:}"
       fi
+      # Expand shorthand in the target
+      _target=$(pulsar__expand_shorthand "$_target")
     }
 
     # Use legacy arrays if provided, else treat PULSAR_PLUGINS as ordered list

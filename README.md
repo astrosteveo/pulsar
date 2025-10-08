@@ -94,6 +94,23 @@ PULSAR_PLUGINS=(
 )
 ```
 
+Or use convenient shorthand aliases:
+
+```zsh
+PULSAR_PLUGINS=(
+  OMZP::git        # Expands to ohmyzsh/ohmyzsh/plugins/git
+  OMZP::docker     # Expands to ohmyzsh/ohmyzsh/plugins/docker
+  OMZP::kubectl    # Expands to ohmyzsh/ohmyzsh/plugins/kubectl
+  OMZL::completion # Expands to ohmyzsh/ohmyzsh/lib/completion
+  OMZT::robbyrussell # Expands to ohmyzsh/ohmyzsh/themes/robbyrussell
+)
+```
+
+**Shorthand aliases:**
+- `OMZP::` → `ohmyzsh/ohmyzsh/plugins/`
+- `OMZL::` → `ohmyzsh/ohmyzsh/lib/`
+- `OMZT::` → `ohmyzsh/ohmyzsh/themes/`
+
 ### Version Pinning
 
 Pin plugins to specific versions:
