@@ -64,8 +64,10 @@ PULSAR_PLUGINS+=(
   zsh-users/zsh-completions
   
   # Useful tools
-  # romkatv/zsh-defer  # Defer plugin loading for faster startup
-  # junegunn/fzf       # Fuzzy finder
+  # romkatv/zsh-defer  # Defer plugin loading for faster startup.
+                       # Uncomment if you have many plugins and want to optimize startup time.
+  # junegunn/fzf       # Fuzzy finder.
+                       # Uncomment if you have fzf installed and want fuzzy file/buffer searching in your shell.
 )
 
 # ============================================================================
