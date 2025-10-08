@@ -258,7 +258,13 @@ function plugin-clone {
         fi
         plugin-compile $plugdir || true
       ) &
-      clone_pids+=($!)
+      local _pid=$!
+      if [[ -n "$_pid" && "$_pid" -gt 0 ]]; then
+        clone_pids+=($_pid)
+      else
+        echo >&2 "Pulsar: Warning: Failed to capture background process ID for cloning ${display_spec}"
+        (( failed_count++ ))
+      fi
     fi
   done
   
