@@ -56,6 +56,7 @@ Restart your shell and plugins will clone in parallel on first run, then load in
 ### Plugin Arrays
 
 **PULSAR_PLUGINS** - Source plugins (traditional loading):
+
 ```zsh
 PULSAR_PLUGINS=(
   romkatv/powerlevel10k
@@ -65,6 +66,7 @@ PULSAR_PLUGINS=(
 ```
 
 **PULSAR_PATH** - Add tools to PATH:
+
 ```zsh
 PULSAR_PATH=(
   junegunn/fzf
@@ -73,6 +75,7 @@ PULSAR_PATH=(
 ```
 
 **PULSAR_FPATH** - Add completions to fpath:
+
 ```zsh
 PULSAR_FPATH=(
   zsh-users/zsh-completions
