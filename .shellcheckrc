@@ -1,0 +1,17 @@
+# ShellCheck configuration for Pulsar
+# Zsh-specific linting rules
+
+# Enable all optional checks
+enable=all
+
+# Disable checks that conflict with Zsh idioms
+disable=SC1036  # '(' is invalid here - Zsh functions use ()
+disable=SC1088  # Zsh-specific: parsing error
+disable=SC1090  # Can't follow non-constant source
+disable=SC1091  # Not following: (dynamic paths)
+disable=SC2034  # Variable appears unused (Zsh uses dynamic scope)
+disable=SC2154  # Variable referenced but not assigned (Zsh dynamic vars)
+disable=SC2155  # Declare and assign separately to avoid masking return values (acceptable in Zsh)
+
+# Zsh-specific settings
+shell=bash  # Use bash parser (closest to Zsh)

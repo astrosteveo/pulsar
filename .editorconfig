@@ -8,9 +8,18 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 4
 
-[*.zsh]
+[*.{zsh,sh}]
 indent_size = 2
+max_line_length = 100
 
 [*.{md,markdown}]
 # Don't trim end spacing because unfortunately Markdown uses that
 trim_trailing_whitespace = false
+indent_size = 2
+
+[Makefile]
+indent_style = tab
+indent_size = 4
+
+[*.{yml,yaml}]
+indent_size = 2
