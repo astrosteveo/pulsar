@@ -1,11 +1,13 @@
 
-# Pulsar ⚡
+# Pulsar
 
 > A minimal, KISS-principle Zsh plugin manager. Fast, simple, and powerful.
 
 [![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
 
 ## Features
+
+Fast. Simple. Flexible.
 
 - **⚡ Fast**: Sub-50ms startup overhead, parallel plugin cloning
 - **🎯 Simple**: Declarative arrays, automatic init file discovery
@@ -17,12 +19,13 @@
 
 ### Installation
 
+#### The one liner:
+
 ```bash
-# One-liner installation
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/astrosteveo/pulsar/main/install.sh)"
 ```
 
-Or manually:
+#### Manually:
 
 ```bash
 git clone https://github.com/astrosteveo/pulsar.git
@@ -242,7 +245,7 @@ See [LICENSE](LICENSE) or <http://unlicense.org/> for details.
 
 ## Credits
 
-Inspired by [mattmc3/zsh_unplugged](https://github.com/mattmc3/zsh_unplugged) and the Zsh plugin management ecosystem. ⚡
+Inspired by [mattmc3/zsh_unplugged](https://github.com/mattmc3/zsh_unplugged). This framework started out as [mattmc3/zsh_unplugged/antidote.lite.zsh](https://github.com/mattmc3/zsh_unplugged/blob/main/antidote.lite.zsh)
 
 ![GitHub License](https://img.shields.io/github/license/astrosteveo/pulsar)
 ![Shell](https://img.shields.io/badge/shell-zsh%205.8%2B-777?logo=gnubash&logoColor=white)
