@@ -6,6 +6,23 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 ## [Unreleased]
 
+### Added
+- **Oh-My-Zsh Shorthand Aliases**: New convenient syntax for OMZ plugins:
+  - `OMZP::plugin-name` expands to `ohmyzsh/ohmyzsh/plugins/plugin-name`
+  - `OMZL::lib-name` expands to `ohmyzsh/ohmyzsh/lib/lib-name`
+  - `OMZT::theme-name` expands to `ohmyzsh/ohmyzsh/themes/theme-name`
+- **Automatic Completion Initialization**: Pulsar now auto-calls `compinit` when loading OMZ plugins to prevent `compdef: command not found` errors
+- **Enhanced Error Messages**: Better error reporting for failed clones, missing init files, and ref checkout failures
+
+### Changed
+- **Improved Clone Messages**: Clone progress now shows full plugin path including subdirectories (e.g., "Cloning ohmyzsh/ohmyzsh/plugins/kubectl..." instead of just "Cloning ohmyzsh/ohmyzsh...")
+- **Better OMZ Plugin Discovery**: Plugin loading now properly handles subdirectory paths in OMZ repository structure
+
+### Fixed
+- `compdef: command not found` errors when loading Oh-My-Zsh plugins
+- Confusing clone messages that didn't show subdirectory paths
+- Missing error handling for failed git operations
+
 ## [1.0.0] - 2025-10-08
 
 ### 🎉 Major Release: Production Ready

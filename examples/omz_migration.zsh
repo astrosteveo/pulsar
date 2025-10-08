@@ -50,6 +50,17 @@ PULSAR_PLUGINS=(
   zsh-users/zsh-autosuggestions
 )
 
+# Alternative: Use convenient shorthand aliases (OMZP::, OMZL::, OMZT::)
+# PULSAR_PLUGINS=(
+#   OMZP::git          # Same as ohmyzsh/ohmyzsh/plugins/git
+#   OMZP::docker       # Same as ohmyzsh/ohmyzsh/plugins/docker
+#   OMZP::kubectl      # Same as ohmyzsh/ohmyzsh/plugins/kubectl
+#   OMZL::completion   # Same as ohmyzsh/ohmyzsh/lib/completion
+#   OMZT::robbyrussell # Same as ohmyzsh/ohmyzsh/themes/robbyrussell
+#   zsh-users/zsh-syntax-highlighting
+#   zsh-users/zsh-autosuggestions
+# )
+
 # ============================================================================
 # Step 4: Migrate Your Theme
 # ============================================================================
@@ -137,3 +148,7 @@ plugin-load
 
 # 4. Force re-clone if cache is corrupted:
 #    plugin-clone --force ohmyzsh/ohmyzsh/plugins/git
+
+# Note: Pulsar automatically calls compinit when loading OMZ plugins
+# to prevent "compdef: command not found" errors. You don't need to
+# manually initialize completions.

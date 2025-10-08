@@ -87,6 +87,11 @@ PULSAR_PLUGINS=(
   ohmyzsh/ohmyzsh/plugins/kubectl
   ohmyzsh/ohmyzsh/plugins/npm
 
+  # Or use convenient shorthand aliases
+  OMZP::git         # Same as ohmyzsh/ohmyzsh/plugins/git
+  OMZP::docker      # Same as ohmyzsh/ohmyzsh/plugins/docker
+  OMZL::completion  # Same as ohmyzsh/ohmyzsh/lib/completion
+
   # Mix with regular plugins
   zsh-users/zsh-syntax-highlighting
   zsh-users/zsh-autosuggestions
