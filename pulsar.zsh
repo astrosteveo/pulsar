@@ -181,10 +181,18 @@ function plugin-clone {
       (
         command mkdir -p -- ${plugdir:h}
         local url="${PULSAR_GITURL:-https://github.com/}${r}.git"
-        if ! command git clone -q --depth 1 --recursive --shallow-submodules "$url" "$plugdir" 2>/dev/null; then
+        local _git_errfile
+        _git_errfile=$(mktemp)
+        if ! command git clone -q --depth 1 --recursive --shallow-submodules "$url" "$plugdir" 2>$_git_errfile; then
           echo >&2 "Pulsar: Failed to clone ${display_spec} (repository may not exist)"
+          if [[ -s $_git_errfile ]]; then
+            echo >&2 "Git error output:"
+            cat $_git_errfile >&2
+          fi
+          rm -f $_git_errfile
           return 1
         fi
+        rm -f $_git_errfile
         # If a ref was provided for this repo, fetch and checkout it
         if [[ -n ${refmap[$r]-} ]]; then
           local _ref=${refmap[$r]}
