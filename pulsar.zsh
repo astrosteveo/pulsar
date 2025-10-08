@@ -441,10 +441,26 @@ function pulsar__check_update {
 
   # Always show a one-time notice when a new local Pulsar version is first loaded,
   # regardless of network check intervals or channel settings.
-  if [[ "${_pstate[last_seen_local_version]-}" != "$PULSAR_VERSION" ]]; then
-    pulsar__notify_local_update "$PULSAR_VERSION"
-    _pstate[last_seen_local_version]="$PULSAR_VERSION"
-    pulsar__write_state
+  local _chan=${PULSAR_UPDATE_CHANNEL:-stable}
+  [[ "$_chan" == "edge" ]] && _chan=unstable
+
+  local current_local_id
+  if [[ "$_chan" == "unstable" ]]; then
+    # For unstable, check if the state's unstable SHA changed (from self-update)
+    local state_sha="${_pstate[last_seen_unstable_sha]-}"
+    local state_marker="${_pstate[last_seen_local_version]-}"
+    if [[ -n "$state_sha" && "$state_marker" != "unstable:${state_sha[1,7]}" ]]; then
+      pulsar__color_msg 2 "Pulsar updated to commit ${state_sha[1,7]} (unstable)"
+      _pstate[last_seen_local_version]="unstable:${state_sha[1,7]}"
+      pulsar__write_state
+    fi
+  else
+    # For stable/off channels, use version string
+    if [[ "${_pstate[last_seen_local_version]-}" != "$PULSAR_VERSION" ]]; then
+      pulsar__notify_local_update "$PULSAR_VERSION"
+      _pstate[last_seen_local_version]="$PULSAR_VERSION"
+      pulsar__write_state
+    fi
   fi
 
   [[ "$PULSAR_UPDATE_CHANNEL" == "off" ]] && return 0
@@ -707,6 +723,22 @@ function pulsar-self-update {
   fi
 
   rm -f "$temp_file"
+
+  # Update state file with new version/commit info
+  pulsar__read_state
+  if [[ "$_chan" == "stable" && "$new_id" != "unknown" ]]; then
+    _pstate[last_seen_stable_tag]="$new_id"
+    _pstate[last_seen_local_version]="$new_id"
+  elif [[ "$_chan" == "unstable" ]]; then
+    # Store the full SHA for unstable channel
+    local full_sha
+    full_sha=$(pulsar__get_main_sha 2>/dev/null)
+    if [[ -n "$full_sha" ]]; then
+      _pstate[last_seen_unstable_sha]="$full_sha"
+      _pstate[last_seen_local_version]="unstable:${full_sha[1,7]}"
+    fi
+  fi
+  pulsar__write_state
 
   # Success message
   if command -v tput >/dev/null 2>&1; then
