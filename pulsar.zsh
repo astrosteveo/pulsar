@@ -56,7 +56,7 @@ pulsar__cecho() {
   # color_code default 36 (cyan)
   pulsar__progress_on || return 0
   local msg=$1 col=${2:-36}
-  if pulsar__color_on; then print -r -- "\e[${col}m$msg\e[0m"; else print -r -- "$msg"; fi
+  if pulsar__color_on; then printf "\e[%sm%s\e[0m\n" "$col" "$msg"; else print -r -- "$msg"; fi
 }
 
 # Banner helpers (separate from progress)
@@ -67,7 +67,7 @@ pulsar__banner_on() {
 pulsar__banner() {
   local msg=$1 col=${2:-36}
   pulsar__banner_on || return 0
-  if pulsar__color_on; then print -r -- "\e[${col}m$msg\e[0m"; else print -r -- "$msg"; fi
+  if pulsar__color_on; then printf "\e[%sm%s\e[0m\n" "$col" "$msg"; else print -r -- "$msg"; fi
 }
 
 ##? Print a colorized message if colors are enabled
