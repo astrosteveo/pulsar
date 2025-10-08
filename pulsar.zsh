@@ -26,8 +26,8 @@ typeset -g PULSAR_UPDATE_SHOW_NOTES=${PULSAR_UPDATE_SHOW_NOTES:-1} # 1=attempt t
 typeset -g PULSAR_PROGRESS=${PULSAR_PROGRESS:-auto}
 # Color output: auto=TTY only, 1=force, 0=off
 typeset -g PULSAR_COLOR=${PULSAR_COLOR:-auto}
-# Banner output: show one-line status after autorun; auto=TTY only, 1=force, 0=off
-typeset -g PULSAR_BANNER=${PULSAR_BANNER:-auto}
+# Banner output: show one-line status after autorun; auto=TTY only, 1=force, 0=off (default: off for quiet shells)
+typeset -g PULSAR_BANNER=${PULSAR_BANNER:-0}
 # Update notifier cache/state helpers
 pulsar__cache_dir() { print -r -- "${XDG_CACHE_HOME:-$HOME/.cache}/pulsar"; }
 pulsar__state_file() { print -r -- "$(pulsar__cache_dir)/update_state"; }
