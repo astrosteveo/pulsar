@@ -6,7 +6,7 @@
 # version: 0.3.2
 
 # Version tracking for update checks
-# Testing unstable channel update detection
+# Testing interactive update prompt fix
 
 # Set variables.
 : ${PULSAR_HOME:=${XDG_CACHE_HOME:-~/.cache}/pulsar}
