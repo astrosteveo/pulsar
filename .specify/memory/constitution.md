@@ -94,6 +94,20 @@ Follow-up TODOs: None
 
 **Rationale**: Performance directly impacts user satisfaction. Slow tools are abandoned tools. Optimization should be proactive, not reactive, and guided by measurement.
 
+### VI. Specification Discipline (NON-NEGOTIABLE)
+
+**The specs/ directory MUST contain ONLY the canonical specification documents. No meta-documentation, status reports, or process artifacts are permitted.**
+
+- The specs/[###-feature]/ directory MUST contain ONLY: spec.md, plan.md, tasks.md, data-model.md, research.md, quickstart.md, and checklists/
+- NO completion reports, status summaries, or process documentation MAY be created in specs/
+- Implementation tracking MUST be done by marking tasks complete in tasks.md (using [x])
+- Status and progress MUST be communicated through git commits, PR descriptions, and project management tools—NOT through files in specs/
+- The /speckit.implement command MUST execute tasks and update code, NOT create meta-documentation
+- Any temptation to create "COMPLETE.md", "STATUS.md", "REPORT.md" or similar files MUST be resisted
+- Process documentation (if needed) belongs in project root docs/ or .github/, NEVER in specs/
+
+**Rationale**: The specs/ directory is the source of truth for what the software should do, not a journal of the development process. Polluting it with status reports makes it harder to find the actual specification and violates separation of concerns. Tasks.md already provides the authoritative status through checkbox completion.
+
 ## Development Workflow
 
 ### Branch Management
@@ -159,4 +173,22 @@ Constitution versions follow semantic versioning:
 
 This constitution is a living document. As the project evolves, principles may be refined, added, or (rarely) removed. All changes MUST be documented in the Sync Impact Report and communicated to all stakeholders.
 
-**Version**: 1.0.0 | **Ratified**: 2025-10-07 | **Last Amended**: 2025-10-07
+---
+
+## Amendment History
+
+### Version 1.1.0 - 2025-10-08
+
+**Added**: Principle VI - Specification Discipline
+
+**Rationale**: During implementation of feature 001, meta-documentation files (IMPLEMENTATION-COMPLETE.md, OPTION-B-COMPLETE.md, REMEDIATION-COMPLETE.md, KNOWN-LIMITATIONS.md) were incorrectly created in specs/001-we-are-creating/. These files were process artifacts, not specification documents, and polluted the canonical spec directory. This principle prevents future violations by explicitly prohibiting any files beyond the core specification documents.
+
+**Impact**:
+
+- Templates: No changes required (templates already specify correct file list)
+- Workflow: /speckit.implement must NOT create status/completion reports
+- Enforcement: PR reviews must verify specs/ contains only canonical documents
+
+---
+
+**Version**: 1.1.0 | **Ratified**: 2025-10-07 | **Last Amended**: 2025-10-08
