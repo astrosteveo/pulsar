@@ -55,13 +55,23 @@ tmp_bootstrap="${bootstrap_path}.tmp.$$"
 umask 022
 cat >"$tmp_bootstrap" <<'ZSH_BOOTSTRAP'
 # pulsar bootstrapper (zsh)
-ZSH=${ZDOTDIR:-${XDG_CONFIG_HOME:-$HOME/.config}/zsh}
+# Compute ZSH like installer/.zshrc block: treat ZDOTDIR=$HOME as unset
+if [[ -n ${ZDOTDIR-} && $ZDOTDIR != $HOME ]]; then
+  ZSH=$ZDOTDIR
+else
+  ZSH=${XDG_CONFIG_HOME:-$HOME/.config}/zsh
+fi
 mkdir -p "$ZSH/lib"
+
+# Allow overriding the upstream repo via PULSAR_REPO (owner/repo)
+repo=${PULSAR_REPO:-astrosteveo/pulsar}
+url_base="https://raw.githubusercontent.com/${repo}/main"
+
 if command -v curl >/dev/null 2>&1; then
   if [[ -f "$ZSH/lib/pulsar.zsh" ]]; then
-    curl -fsSL -z "$ZSH/lib/pulsar.zsh" -o "$ZSH/lib/pulsar.zsh" https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh || true
+    curl -fsSL -z "$ZSH/lib/pulsar.zsh" -o "$ZSH/lib/pulsar.zsh" "$url_base/pulsar.zsh" || true
   else
-    curl -fsSL -o "$ZSH/lib/pulsar.zsh" https://raw.githubusercontent.com/astrosteveo/pulsar/main/pulsar.zsh || true
+    curl -fsSL -o "$ZSH/lib/pulsar.zsh" "$url_base/pulsar.zsh" || true
   fi
 fi
 if [[ -f "$ZSH/lib/pulsar.zsh" ]]; then
@@ -98,13 +108,18 @@ export PULSAR_PROGRESS=auto
 export PULSAR_COLOR=auto
 export PULSAR_UPDATE_CHANNEL=$channel
 export PULSAR_UPDATE_NOTIFY=1
+# Unified ordered plugin list. Supported forms:
+#   owner/repo           -> source default init
+#   path:owner/repo      -> add to PATH (bin/ if present)
+#   fpath:owner/repo     -> append to fpath
+#   /local/path or fpath:/local/dir also work
 PULSAR_PLUGINS=(
   zsh-users/zsh-completions
   zsh-users/zsh-autosuggestions
   zsh-users/zsh-syntax-highlighting
+  fpath:sindresorhus/pure
+  path:romkatv/zsh-bench
 )
-PULSAR_FPATH=(sindresorhus/pure)
-PULSAR_PATH=(romkatv/zsh-bench)
 source "\$ZSH/lib/pulsar-bootstrap.zsh"
 $end_marker
 EOF

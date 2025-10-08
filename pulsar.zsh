@@ -177,10 +177,27 @@ function plugin-script {
   (( ! $+functions[zsh-defer] )) || src="zsh-defer ."
   for plugin in $@; do
     if [[ -n "$kind" ]]; then
-      if [[ "$kind" == "path" && -d $PULSAR_HOME/$plugin/bin ]]; then
-        echo "path=(\$path $PULSAR_HOME/$plugin/bin)"
+      # Support local absolute/relative paths as well as repo specs
+      if [[ "$kind" == "path" ]]; then
+        if [[ "$plugin" == /* || "$plugin" == ./* || "$plugin" == ../* ]]; then
+          if [[ -d "$plugin/bin" ]]; then
+            echo "path=(\\$path $plugin/bin)"
+          else
+            echo "path=(\\$path $plugin)"
+          fi
+        else
+          if [[ -d $PULSAR_HOME/$plugin/bin ]]; then
+            echo "path=(\\$path $PULSAR_HOME/$plugin/bin)"
+          else
+            echo "path=(\\$path $PULSAR_HOME/$plugin)"
+          fi
+        fi
       else
-        echo "$kind=(\$$kind $PULSAR_HOME/$plugin)"
+        if [[ "$plugin" == /* || "$plugin" == ./* || "$plugin" == ../* ]]; then
+          echo "$kind=(\\$$kind $plugin)"
+        else
+          echo "$kind=(\\$$kind $PULSAR_HOME/$plugin)"
+        fi
       fi
     else
       inits=(
@@ -418,22 +435,64 @@ function pulsar__check_update {
   fi
 
   if (( do_autorun )); then
-    local -Ua _all=()
-    (( $#PULSAR_PLUGINS )) && _all+=$PULSAR_PLUGINS
-    (( $#PULSAR_PATH ))    && _all+=$PULSAR_PATH
-    (( $#PULSAR_FPATH ))   && _all+=$PULSAR_FPATH
-    (( $#_all )) && plugin-clone $_all
+    # Helper to parse unified specs like path:owner/repo or fpath:/local/dir
+    local _kind _target
+    pulsar__parse_spec() {
+      local spec="$1"; _kind=source; _target="$spec"
+      if [[ "$spec" == fpath:* ]]; then
+        _kind=fpath; _target="${spec#fpath:}"
+      elif [[ "$spec" == path:* ]]; then
+        _kind=path; _target="${spec#path:}"
+      fi
+    }
 
-    (( $#PULSAR_PATH ))  && plugin-load --kind path  $PULSAR_PATH
-    (( $#PULSAR_FPATH )) && plugin-load --kind fpath $PULSAR_FPATH
-    (( $#PULSAR_PLUGINS )) && plugin-load $PULSAR_PLUGINS
+    # Use legacy arrays if provided, else treat PULSAR_PLUGINS as ordered list
+    local use_legacy=0
+    (( $#PULSAR_PATH + $#PULSAR_FPATH > 0 )) && use_legacy=1
+
+    if (( use_legacy )); then
+      local -Ua _all=()
+      (( $#PULSAR_PLUGINS )) && _all+=$PULSAR_PLUGINS
+      (( $#PULSAR_PATH ))    && _all+=$PULSAR_PATH
+      (( $#PULSAR_FPATH ))   && _all+=$PULSAR_FPATH
+      (( $#_all )) && plugin-clone $_all
+
+      (( $#PULSAR_PATH ))    && plugin-load --kind path  $PULSAR_PATH
+      (( $#PULSAR_FPATH ))   && plugin-load --kind fpath $PULSAR_FPATH
+      (( $#PULSAR_PLUGINS )) && plugin-load $PULSAR_PLUGINS
+    else
+      local spec
+      local -Ua _repos_to_clone=()
+      for spec in $PULSAR_PLUGINS; do
+        pulsar__parse_spec "$spec"
+        # Only clone GitHub-like repos (owner/repo possibly with @ref); skip local paths
+        if [[ "$_target" == */* && "$_target" != /* && "$_target" != ./* && "$_target" != ../* ]]; then
+          _repos_to_clone+="$_target"
+        fi
+      done
+      (( $#_repos_to_clone )) && plugin-clone $_repos_to_clone
+
+      for spec in $PULSAR_PLUGINS; do
+        pulsar__parse_spec "$spec"
+        case $_kind in
+          path)  plugin-load --kind path  "$_target" ;;
+          fpath) plugin-load --kind fpath "$_target" ;;
+          *)     plugin-load               "$_target" ;;
+        esac
+      done
+    fi
 
     [[ -n ${PULSAR_AUTOCOMPILE-} ]] && plugin-compile
 
     # Print a concise banner only for interactive shells
     if (( was_interactive )); then
-      local _num_plugins=$#PULSAR_PLUGINS _num_path=$#PULSAR_PATH _num_fpath=$#PULSAR_FPATH
-      pulsar__banner "Pulsar ready: plugins=${_num_plugins} path=${_num_path} fpath=${_num_fpath}" 36
+      if (( use_legacy )); then
+        local _num_plugins=$#PULSAR_PLUGINS _num_path=$#PULSAR_PATH _num_fpath=$#PULSAR_FPATH
+        pulsar__banner "Pulsar ready: plugins=${_num_plugins} path=${_num_path} fpath=${_num_fpath}" 36
+      else
+        local _num_ordered=$#PULSAR_PLUGINS
+        pulsar__banner "Pulsar ready: entries=${_num_ordered} (ordered)" 36
+      fi
     fi
   fi
 }

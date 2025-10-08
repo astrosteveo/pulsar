@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 ## [Unreleased]
 
+### Added
+
+- Unified, ordered plugin list via `PULSAR_PLUGINS` supporting prefixes `path:` and `fpath:` and pinning with `@ref`. Load order now follows the array order.
+
+### Changed
+
+- Backward compatible: legacy `PULSAR_PATH` and `PULSAR_FPATH` continue to work; when present they take precedence over ordered mode.
+- Installer `.zshrc` block now showcases the unified list.
+- README modernized to reflect unified list, ZDOTDIR policy, and update notifier.
+
 ## [0.3.1] - 2025-10-07
 
 ### Fixed
