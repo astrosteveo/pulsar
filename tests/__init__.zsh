@@ -28,6 +28,9 @@ function t_setup {
   typeset -g OLD_XDG_CACHE_HOME=$XDG_CACHE_HOME
   export XDG_CACHE_HOME=$T_TEMPDIR/.cache
 
+  # ensure PULSAR_HOME will be computed fresh for each test
+  unset PULSAR_HOME
+
 }
 
 function t_teardown {

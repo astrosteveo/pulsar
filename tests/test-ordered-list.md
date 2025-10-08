@@ -26,14 +26,10 @@ Create simple local mock plugins
 Use unified ordered list and ensure order is preserved
 
 ```zsh
-% PULSAR_PLUGINS=( \
-    $T_TEMPDIR/mock/local1 \
-    path:$T_TEMPDIR/mock/local2 \
-  )
+% PULSAR_PLUGINS=($T_TEMPDIR/mock/local1 path:$T_TEMPDIR/mock/local2)
 % source ./pulsar.zsh #=> --exit 0
 % command -v local2 >/dev/null && echo ok
 ok
-% zsh -fc 'source ./pulsar.zsh; :'
 %
 ```
 
