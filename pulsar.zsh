@@ -100,6 +100,9 @@ function pulsar__expand_shorthand {
   # OMZT:: -> ohmyzsh/ohmyzsh/themes/
   elif [[ "$spec" == OMZT::* ]]; then
     spec="ohmyzsh/ohmyzsh/themes/${spec#OMZT::}"
+  # PZT:: -> sorin-ionescu/prezto/modules/
+  elif [[ "$spec" == PZT::* ]]; then
+    spec="sorin-ionescu/prezto/modules/${spec#PZT::}"
   fi
   print -r -- "$spec"
 }
@@ -110,7 +113,7 @@ function plugin-clone {
   local spec repo ref plugdir processed_repo repo_part r original_spec
   local -A refmap specmap
   local -Ua allrepos repos all_specs
-  local -i installed_count=0 updated_count=0
+  local -i installed_count=0 updated_count=0 failed_count=0
 
   # Ensure base directory exists
   [[ -d $PULSAR_HOME ]] || command mkdir -p -- $PULSAR_HOME
@@ -134,9 +137,19 @@ function plugin-clone {
     ref=${spec##*@}
     repo=${spec%@*}
 
+    # For subdirectory specs (owner/repo/subdir/...), extract just owner/repo
+    # This ensures we clone the full repo, not try to clone a subdirectory
+    local repo_only
+    if [[ "$repo" == */*/* ]]; then
+      # Extract owner/repo from owner/repo/subdir/...
+      repo_only="${repo%%/*}/${${repo#*/}%%/*}"
+    else
+      repo_only="$repo"
+    fi
+
     # Split a single spec that may contain multiple repos respecting quotes
-    for repo_part in ${(z)repo}; do
-      # Normalize to owner/repo
+    for repo_part in ${(z)repo_only}; do
+      # Normalize to owner/repo (should already be normalized)
       processed_repo=${(@j:/:)${(@s:/:)repo_part}[1,2]}
       allrepos+=($processed_repo)
       
@@ -144,23 +157,32 @@ function plugin-clone {
       specmap[$processed_repo]="$original_spec"
 
       # Map ref if provided as @ref to normalized repo
-      if [[ $repo_part == *"@"* ]]; then
-        refmap[$processed_repo]=${repo_part##*@}
+      if [[ "$spec" == *"@"* ]]; then
+        refmap[$processed_repo]=$ref
       fi
 
-      # Build list of repos that need cloning
+      # Build list of repos that need cloning (idempotency check)
       if [[ -e $PULSAR_HOME/$processed_repo ]]; then
+        # Repository already exists
         if [[ -n $PULSAR_FORCE_RECLONE ]]; then
+          pulsar__cecho "Force re-cloning ${processed_repo}..." 33
           command rm -rf -- $PULSAR_HOME/$processed_repo
           repos+=$processed_repo
+        elif [[ ! -d $PULSAR_HOME/$processed_repo/.git ]]; then
+          # Path exists but is not a valid git repo
+          echo >&2 "Pulsar: Warning: ${processed_repo} exists but is not a git repository"
+          echo >&2 "Pulsar: Remove it or set PULSAR_FORCE_RECLONE=1 to re-clone"
+          (( failed_count++ ))
         fi
+        # else: repo exists and is valid, skip cloning (idempotency)
       else
         repos+=$processed_repo
       fi
     done
   done
 
-  # Clone missing repos
+  # Clone missing repos in parallel
+  local -a clone_pids=()
   for r in $repos; do
     plugdir=$PULSAR_HOME/$r
     # Get the display spec (original with subdirectory if provided)
@@ -172,27 +194,55 @@ function plugin-clone {
     if [[ ! -d $plugdir ]]; then
       pulsar__cecho "Cloning ${display_spec}..." 36
       (( installed_count++ ))
-    elif [[ -d $plugdir/.git ]]; then
-      pulsar__cecho "Updating ${display_spec}..." 36
-    else
-      pulsar__cecho "Pulsar: Preparing ${display_spec}" 36
     fi
+    
     if [[ ! -d $plugdir ]]; then
       (
         command mkdir -p -- ${plugdir:h}
         local url="${PULSAR_GITURL:-https://github.com/}${r}.git"
-        local _git_errfile
+        local _git_errfile _clone_success=0
         _git_errfile=$(mktemp)
-        if ! command git clone -q --depth 1 --recursive --shallow-submodules "$url" "$plugdir" 2>$_git_errfile; then
-          echo >&2 "Pulsar: Failed to clone ${display_spec} (repository may not exist)"
-          if [[ -s $_git_errfile ]]; then
-            echo >&2 "Git error output:"
-            cat $_git_errfile >&2
+        
+        # Validate git is available
+        if ! command -v git >/dev/null 2>&1; then
+          echo >&2 "Pulsar: Error: git command not found"
+          echo >&2 "Pulsar: Please install git to clone plugins"
+          rm -f $_git_errfile
+          exit 1
+        fi
+        
+        # Clone with timeout and error handling
+        if command git clone -q --depth 1 --recursive --shallow-submodules "$url" "$plugdir" 2>$_git_errfile; then
+          _clone_success=1
+        else
+          # Clone failed - provide detailed error message
+          echo >&2 "Pulsar: Failed to clone ${display_spec}"
+          if grep -q "repository not found\|not found\|does not exist" $_git_errfile 2>/dev/null; then
+            echo >&2 "Pulsar: Repository '${r}' does not exist on ${PULSAR_GITURL:-https://github.com/}"
+          elif grep -q "could not resolve host\|unable to access" $_git_errfile 2>/dev/null; then
+            echo >&2 "Pulsar: Network error - check your internet connection"
+          elif grep -q "authentication\|permission denied" $_git_errfile 2>/dev/null; then
+            echo >&2 "Pulsar: Authentication required for ${r}"
+          else
+            # Generic error - show git output
+            if [[ -s $_git_errfile ]]; then
+              echo >&2 "Pulsar: Git error output:"
+              sed 's/^/  /' $_git_errfile >&2
+            fi
           fi
           rm -f $_git_errfile
-          return 1
+          # Clean up failed clone attempt
+          [[ -d "$plugdir" ]] && rm -rf -- "$plugdir"
+          exit 1
         fi
         rm -f $_git_errfile
+        
+        # Validate the clone was successful
+        if [[ ! -d "$plugdir/.git" ]]; then
+          echo >&2 "Pulsar: Warning: Clone of ${display_spec} completed but .git directory missing"
+          exit 1
+        fi
+        
         # If a ref was provided for this repo, fetch and checkout it
         if [[ -n ${refmap[$r]-} ]]; then
           local _ref=${refmap[$r]}
@@ -202,35 +252,64 @@ function plugin-clone {
             command git -C $plugdir fetch -q --depth 1 origin $_ref 2>/dev/null || true
             if ! command git -C $plugdir checkout -q --detach --force ${_ref} 2>/dev/null; then
               echo >&2 "Pulsar: Warning: Failed to checkout ref '${_ref}' for ${display_spec}"
+              echo >&2 "Pulsar: Using default branch instead"
             fi
           fi
         fi
         plugin-compile $plugdir || true
       ) &
+      local _pid=$!
+      if [[ -n "$_pid" && "$_pid" -gt 0 ]]; then
+        clone_pids+=($_pid)
+      else
+        echo >&2 "Pulsar: Warning: Failed to capture background process ID for cloning ${display_spec}"
+        (( failed_count++ ))
+      fi
     fi
   done
-  wait
+  
+  # Wait for all clones and track failures
+  for pid in $clone_pids; do
+    if ! wait $pid; then
+      (( failed_count++ ))
+    fi
+  done
 
   # If repo already exists but a ref was requested, honor it
   local existing
   for existing in ${(u)allrepos}; do
-    if [[ -d $PULSAR_HOME/$existing && -n ${refmap[$existing]-} ]]; then
-      pulsar__cecho "Updating ${existing}..." 36
+    if [[ -d $PULSAR_HOME/$existing/.git && -n ${refmap[$existing]-} ]]; then
+      local display_spec="${specmap[$existing]:-$existing}"
+      display_spec="${display_spec%@*}"
+      pulsar__cecho "Updating ${display_spec} to ref ${refmap[$existing]}..." 36
       (( updated_count++ ))
       (
         plugdir=$PULSAR_HOME/$existing
         local _ref=${refmap[$existing]}
-        command git -C $plugdir fetch -q --depth 1 origin $_ref || true
-        command git -C $plugdir checkout -q --detach --force ${_ref} 2>/dev/null || true
+        command git -C $plugdir fetch -q --depth 1 origin $_ref 2>/dev/null || {
+          echo >&2 "Pulsar: Warning: Failed to fetch ref '${_ref}' for ${display_spec}"
+        }
+        command git -C $plugdir checkout -q --detach --force ${_ref} 2>/dev/null || {
+          echo >&2 "Pulsar: Warning: Failed to checkout ref '${_ref}' for ${display_spec}"
+        }
         plugin-compile $plugdir || true
       ) &
     fi
   done
   wait
+  
   # Print final summary only when running in an interactive TTY.
   if pulsar__isatty; then
-    (( installed_count + updated_count )) && pulsar__cecho "Pulsar: ${installed_count} installed, ${updated_count} updated" 32
+    if (( installed_count + updated_count > 0 )); then
+      pulsar__cecho "Pulsar: ${installed_count} installed, ${updated_count} updated" 32
+    fi
+    if (( failed_count > 0 )); then
+      echo >&2 "Pulsar: ${failed_count} plugin(s) failed to clone"
+      return 1
+    fi
   fi
+  
+  return 0
 }
 
 ##? Load zsh plugins.
@@ -296,26 +375,86 @@ function plugin-script {
         echo "$kind=(\\$$kind $_dir)"
       fi
     else
-      # For plugins with subdirectories (e.g., ohmyzsh/ohmyzsh/plugins/git),
-      # look for init files in the full path, not just based on the tail
-      inits=(
-        {$ZPLUGINDIR,$PULSAR_HOME}/$expanded_plugin/${expanded_plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        $PULSAR_HOME/$expanded_plugin/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        $PULSAR_HOME/$expanded_plugin(N)
-        ${expanded_plugin}/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
-        ${expanded_plugin}(N)
-      )
+      # Determine the base repository path (first two components for GitHub-like specs)
+      local repo_path subdir_path base_path
+      if [[ "$expanded_plugin" == */*/* ]]; then
+        # Has subdirectory: owner/repo/subdir/...
+        # Extract owner/repo as repo_path
+        repo_path="${expanded_plugin%%/*}/${${expanded_plugin#*/}%%/*}"
+        # Extract everything after owner/repo as subdir_path
+        subdir_path="${expanded_plugin#*/*/}"
+        base_path="$PULSAR_HOME/$repo_path"
+      else
+        # No subdirectory: just owner/repo or local path
+        repo_path="$expanded_plugin"
+        subdir_path=""
+        base_path="$PULSAR_HOME/$expanded_plugin"
+      fi
+
+      # Build list of candidate init files
+      # For OMZ-like specs with subdirectories, we need special handling:
+      # - plugins/git -> directory containing git.plugin.zsh
+      # - lib/completion -> direct file completion.zsh
+      # - themes/robbyrussell -> direct file robbyrussell.zsh-theme
+      inits=()
+      
+      if [[ -n "$subdir_path" ]]; then
+        # Subdirectory specified (e.g., ohmyzsh/ohmyzsh/lib/completion)
+        local full_path="$base_path/$subdir_path"
+        local name_part="${subdir_path:t}"
+        
+        # Check if it's a directory first
+        if [[ -d "$full_path" ]]; then
+          # It's a directory (like plugins/git/) - look for plugin files inside
+          inits+=(
+            "$full_path/$name_part.plugin.zsh"(N)
+            "$full_path/$name_part.zsh-theme"(N)
+            "$full_path/$name_part.zsh"(N)
+            "$full_path"/*.plugin.zsh(N)
+            "$full_path"/*.zsh-theme(N)
+            "$full_path"/*.zsh(N)
+            "$full_path"/init.zsh(N)
+          )
+        else
+          # Not a directory - try as direct file (like lib/completion or themes/robbyrussell)
+          # The parent directory should exist, and we look for a file with the name
+          local parent_dir="${full_path:h}"
+          if [[ -d "$parent_dir" ]]; then
+            inits+=(
+              "$full_path.zsh"(N)
+              "$full_path.zsh-theme"(N)
+              "$full_path.plugin.zsh"(N)
+              "$full_path"(N)
+            )
+          fi
+        fi
+      else
+        # No subdirectory - standard plugin lookup
+        inits+=(
+          {$ZPLUGINDIR,$PULSAR_HOME}/$expanded_plugin/${expanded_plugin:t}.{plugin.zsh,zsh-theme,zsh,sh}(N)
+          $PULSAR_HOME/$expanded_plugin/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
+          $PULSAR_HOME/$expanded_plugin/init.zsh(N)
+          $PULSAR_HOME/$expanded_plugin(N)
+          ${expanded_plugin}/*.{plugin.zsh,zsh-theme,zsh,sh}(N)
+          ${expanded_plugin}(N)
+        )
+      fi
+      
       if (( ! $#inits )); then
         echo >&2 "Pulsar: No plugin init found for '$plugin' (expanded to '$expanded_plugin')."
-        echo >&2 "Pulsar: Looked in the following paths:"
-        for _path in \
-          {$ZPLUGINDIR,$PULSAR_HOME}/$expanded_plugin/${expanded_plugin:t}.{plugin.zsh,zsh-theme,zsh,sh} \
-          $PULSAR_HOME/$expanded_plugin/*.{plugin.zsh,zsh-theme,zsh,sh} \
-          $PULSAR_HOME/$expanded_plugin \
-          ${expanded_plugin}/*.{plugin.zsh,zsh-theme,zsh,sh} \
-          ${expanded_plugin}; do
-          echo >&2 "  $_path"
-        done
+        if [[ -n "$subdir_path" ]]; then
+          local full_path="$base_path/$subdir_path"
+          echo >&2 "Pulsar: Expected either:"
+          echo >&2 "  - Directory: $full_path/ with init files inside"
+          echo >&2 "  - Direct file: $full_path.zsh, $full_path.zsh-theme, or $full_path.plugin.zsh"
+          if [[ ! -d "$base_path" ]]; then
+            echo >&2 "Pulsar: Base repository not cloned: $repo_path"
+            echo >&2 "Pulsar: Run 'plugin-clone $plugin' first"
+          fi
+        else
+          echo >&2 "Pulsar: Looked in:"
+          echo >&2 "  $PULSAR_HOME/$expanded_plugin/"
+        fi
         continue
       fi
       plugin=$inits[1]
