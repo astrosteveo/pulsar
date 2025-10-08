@@ -440,13 +440,6 @@ function pulsar__check_update {
   (( PULSAR_UPDATE_NOTIFY )) || return 0
   pulsar__read_state
 
-  # Show a one-time notice when PULSAR_VERSION changes (stable/off channels only)
-  if [[ "${_pstate[last_seen_local_version]-}" != "$PULSAR_VERSION" ]]; then
-    pulsar__notify_local_update "$PULSAR_VERSION"
-    _pstate[last_seen_local_version]="$PULSAR_VERSION"
-    pulsar__write_state
-  fi
-
   [[ "$PULSAR_UPDATE_CHANNEL" == "off" ]] && return 0
   command -v git >/dev/null 2>&1 || return 0
 

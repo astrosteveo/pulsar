@@ -27,20 +27,6 @@ ok
 %
 ```
 
-Local version notice fires once per new version
-
-```zsh
-% export TEST_HOME=$T_TEMPDIR/home5
-% mkdir -p $TEST_HOME
-% export XDG_CACHE_HOME=$T_TEMPDIR/.cache5
-% export PULSAR_UPDATE_NOTIFY=1 PULSAR_UPDATE_CHANNEL=off PULSAR_VERSION=v9.9.9
-% ZDOTDIR=$ZDOTDIR HOME=$TEST_HOME zsh -fc 'source ./pulsar.zsh' | grep -q "Pulsar updated to v9.9.9" && echo ok
-ok
-% ZDOTDIR=$ZDOTDIR HOME=$TEST_HOME zsh -fc 'source ./pulsar.zsh' | grep -q "Pulsar updated to v9.9.9" || echo ok
-ok
-%
-```
-
 Force unstable channel notifier when main advances (mocked)
 
 ```zsh
