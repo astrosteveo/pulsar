@@ -586,11 +586,6 @@ function pulsar__check_update {
   fi
 }
 
-# Trigger update check after initialization
-if (( PULSAR_UPDATE_NOTIFY )); then
-  pulsar__check_update
-fi
-
 # Convenience commands
 
 ##? Update Pulsar core (self) if curl is available, then re-source.
@@ -858,3 +853,8 @@ function pulsar-benchmark {
   printf "  Min:        %d ms\n" "$min"
   printf "  Max:        %d ms\n" "$max"
 }
+
+# Trigger update check after all functions are loaded
+if (( PULSAR_UPDATE_NOTIFY )); then
+  pulsar__check_update
+fi
