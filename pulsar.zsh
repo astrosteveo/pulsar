@@ -307,7 +307,15 @@ function plugin-script {
       )
       if (( ! $#inits )); then
         echo >&2 "Pulsar: No plugin init found for '$plugin' (expanded to '$expanded_plugin')."
-        echo >&2 "Pulsar: Looked in: $PULSAR_HOME/$expanded_plugin"
+        echo >&2 "Pulsar: Looked in the following paths:"
+        for _path in \
+          {$ZPLUGINDIR,$PULSAR_HOME}/$expanded_plugin/${expanded_plugin:t}.{plugin.zsh,zsh-theme,zsh,sh} \
+          $PULSAR_HOME/$expanded_plugin/*.{plugin.zsh,zsh-theme,zsh,sh} \
+          $PULSAR_HOME/$expanded_plugin \
+          ${expanded_plugin}/*.{plugin.zsh,zsh-theme,zsh,sh} \
+          ${expanded_plugin}; do
+          echo >&2 "  $_path"
+        done
         continue
       fi
       plugin=$inits[1]
