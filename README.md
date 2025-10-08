@@ -1,6 +1,230 @@
 
 # Pulsar ⚡
 
+> A minimal, KISS-principle Zsh plugin manager. Fast, simple, and powerful.
+
+[![License: Unlicense](https://img.shields.io/badge/license-Unlicense-blue.svg)](http://unlicense.org/)
+
+## Features
+
+- **⚡ Fast**: Sub-50ms startup overhead, parallel plugin cloning
+- **🎯 Simple**: Declarative arrays, automatic init file discovery
+- **🔧 Flexible**: Multiple loading modes (source, PATH, fpath)
+- **📦 Compatible**: Oh-my-zsh plugins without installing oh-my-zsh
+- **🚀 Minimal**: Pure Zsh + git only, <1000 lines of code
+
+## Quick Start
+
+### Installation
+
+```bash
+# One-liner installation
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/astrosteveo/pulsar/main/install.sh)"
+```
+
+Or manually:
+
+```bash
+git clone https://github.com/astrosteveo/pulsar.git
+cd pulsar
+./install.sh
+```
+
+### Basic Usage
+
+Add to your `.zshrc`:
+
+```zsh
+# Load Pulsar
+source ~/.config/zsh/pulsar.zsh
+
+# Declare plugins
+PULSAR_PLUGINS=(
+  romkatv/powerlevel10k
+  zsh-users/zsh-syntax-highlighting
+  zsh-users/zsh-autosuggestions
+)
+
+# Load plugins
+plugin-load
+```
+
+Restart your shell and plugins will clone in parallel on first run, then load instantly.
+
+## Configuration
+
+### Plugin Arrays
+
+**PULSAR_PLUGINS** - Source plugins (traditional loading):
+
+```zsh
+PULSAR_PLUGINS=(
+  romkatv/powerlevel10k
+  zsh-users/zsh-syntax-highlighting
+  zsh-users/zsh-autosuggestions
+)
+```
+
+**PULSAR_PATH** - Add tools to PATH:
+
+```zsh
+PULSAR_PATH=(
+  junegunn/fzf
+  sharkdp/fd
+)
+```
+
+**PULSAR_FPATH** - Add completions to fpath:
+
+```zsh
+PULSAR_FPATH=(
+  zsh-users/zsh-completions
+)
+```
+
+### Oh-My-Zsh Plugins
+
+Use subdirectory syntax to load OMZ plugins without installing OMZ:
+
+```zsh
+PULSAR_PLUGINS=(
+  ohmyzsh/ohmyzsh/plugins/git
+  ohmyzsh/ohmyzsh/plugins/docker
+  ohmyzsh/ohmyzsh/plugins/kubectl
+)
+```
+
+### Version Pinning
+
+Pin plugins to specific versions:
+
+```zsh
+PULSAR_PLUGINS=(
+  romkatv/powerlevel10k@v1.19.0
+  zsh-users/zsh-syntax-highlighting@master
+)
+```
+
+### Local Plugins
+
+Use local plugin directories:
+
+```zsh
+PULSAR_PLUGINS=(
+  /path/to/my/custom-plugin
+)
+```
+
+## Manual Control
+
+For power users who want direct control:
+
+```zsh
+# Clone a plugin
+plugin-clone user/repo
+
+# Force re-clone (useful for corrupted cache)
+plugin-clone --force user/repo
+
+# Load a plugin manually
+plugin-load user/repo
+
+# Update all plugins
+plugin-update
+
+# Compile plugins for faster loading
+plugin-compile
+
+# Check for plugin conflicts
+pulsar-check-conflicts
+
+# Update Pulsar itself
+pulsar-self-update
+
+# Update everything (Pulsar + all plugins)
+pulsar-update
+```
+
+## Environment Variables
+
+Customize Pulsar behavior:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PULSAR_HOME` | `$XDG_CACHE_HOME/pulsar` | Plugin cache location |
+| `PULSAR_MAX_JOBS` | CPU cores | Max parallel clones |
+| `PULSAR_UPDATE_CHANNEL` | `stable` | Update channel (`stable`/`unstable`/`off`) |
+| `PULSAR_DEBUG` | `0` | Show debug output |
+| `PULSAR_QUIET` | `0` | Suppress warnings |
+| `PULSAR_COLOR` | `auto` | Use color output |
+| `PULSAR_PROGRESS` | `auto` | Show progress indicators |
+
+## Examples
+
+See the [examples/](examples/) directory for complete configurations:
+
+- [pulsar_declarative.zsh](examples/pulsar_declarative.zsh) - Simple declarative setup
+- [pulsar_example.zsh](examples/pulsar_example.zsh) - Full-featured manual control
+- [omz_migration.zsh](examples/omz_migration.zsh) - Migrating from oh-my-zsh
+
+## Performance
+
+Pulsar is designed for speed:
+
+- **Plugin manager overhead**: <50ms (initialization only)
+- **Parallel cloning**: 10 plugins in <10 seconds
+- **Scales efficiently**: 100+ plugins supported
+- **Compiled plugins**: Use `plugin-compile` for even faster loading
+
+## Troubleshooting
+
+### Plugin won't load?
+
+```bash
+# Check for conflicts
+pulsar-check-conflicts
+
+# Force re-clone
+plugin-clone --force user/repo
+
+# Enable debug mode
+PULSAR_DEBUG=1 zsh
+```
+
+### Restore from backup
+
+If installation causes issues:
+
+```bash
+# Backups are timestamped
+cp ~/.zshrc.backup.YYYYMMDD-HHMMSS ~/.zshrc
+```
+
+### Clear cache
+
+```bash
+rm -rf ${XDG_CACHE_HOME:-$HOME/.cache}/pulsar
+```
+
+## Why Pulsar?
+
+- **Minimal**: No external runtimes (Python, Ruby, Node.js)
+- **KISS**: Single file implementation, easy to understand
+- **Fast**: Parallel operations, compiled bytecode support
+- **Compatible**: Works with existing Zsh plugins and OMZ plugins
+- **Safe**: Automatic backups, graceful error handling
+- **Flexible**: Declarative arrays + manual control
+
+## License
+
+This is free and unencumbered software released into the public domain.
+
+See [LICENSE](LICENSE) or <http://unlicense.org/> for details.
+
+## Credits
+
+Inspired by [mattmc3/zsh_unplugged](https://github.com/mattmc3/zsh_unplugged) and the Zsh plugin management ecosystem. ⚡
+
 ![GitHub License](https://img.shields.io/github/license/astrosteveo/pulsar)
 ![Shell](https://img.shields.io/badge/shell-zsh%205.8%2B-777?logo=gnubash&logoColor=white)
 ![Changelog](https://img.shields.io/badge/keep-a%20changelog-0a7ea4)
