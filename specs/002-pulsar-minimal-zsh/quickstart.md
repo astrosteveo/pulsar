@@ -1,7 +1,7 @@
 # Quick Start Guide
 
-**Feature**: 002-pulsar-minimal-zsh  
-**Date**: 2025-10-08  
+**Feature**: 002-pulsar-minimal-zsh
+**Date**: 2025-10-08
 **Audience**: Developers working on Pulsar
 
 ## Overview
@@ -13,11 +13,13 @@ This guide helps developers quickly set up their development environment for wor
 ### Required
 
 - **Zsh**: Version 5.8 or higher
+
   ```zsh
   zsh --version  # Should show >= 5.8
   ```
 
 - **Git**: For cloning and version control
+
   ```zsh
   git --version  # Any reasonably modern version
   ```
@@ -25,6 +27,7 @@ This guide helps developers quickly set up their development environment for wor
 ### Optional
 
 - **ShellCheck**: For linting
+
   ```zsh
   shellcheck --version  # For make lint
   ```
@@ -146,18 +149,22 @@ make lint
 
 1. **Check the spec**: Read `specs/002-pulsar-minimal-zsh/spec.md` to understand requirements
 2. **Write tests first** (TDD encouraged):
+
    ```zsh
    # Edit tests/test-pulsar.md or create new test file
    # Add test cases for your feature
    ```
+
 3. **Implement in pulsar.zsh**:
    - Add functions with clear comments
    - Follow existing naming conventions (kebab-case)
    - Keep functions focused (single responsibility)
 4. **Test continuously**:
+
    ```zsh
    make test  # Run after each change
    ```
+
 5. **Update documentation**:
    - README.md if user-facing
    - CHANGELOG.md with your change
@@ -327,14 +334,18 @@ zprof
 1. **Update version** in pulsar.zsh (`PULSAR_VERSION`)
 2. **Update CHANGELOG.md** with changes (follow SemVer categories)
 3. **Commit version bump**:
+
    ```zsh
    git commit -am "chore: bump version to v0.X.Y"
    ```
+
 4. **Create git tag**:
+
    ```zsh
    git tag -a v0.X.Y -m "Release v0.X.Y"
    git push origin v0.X.Y
    ```
+
 5. **GitHub release**: Create release from tag with CHANGELOG excerpt
 
 ## Getting Help

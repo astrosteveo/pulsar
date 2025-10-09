@@ -1,7 +1,7 @@
 # API Contract: plugin-update
 
-**Feature**: 002-pulsar-minimal-zsh  
-**Function**: `plugin-update`  
+**Feature**: 002-pulsar-minimal-zsh
+**Function**: `plugin-update`
 **Purpose**: Update installed plugins to latest versions (respecting version pins)
 
 ## Signature
