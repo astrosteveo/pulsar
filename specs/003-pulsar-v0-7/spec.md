@@ -166,13 +166,15 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 
 - **FR-019**: Installer MUST prompt user: "Include example configs? (completions, history, keybinds, prompt) [Y/n]"
 - **FR-020**: When user selects yes (Y), installer MUST generate .zshrc with Pulsar source + commented example configurations
-- **FR-021**: Generated .zshrc MUST be 10-20 lines total including Pulsar config and commented examples
-- **FR-022**: Example configurations MUST be pure Zsh (no separate files, no bloat) and include: completion init, history settings, key bindings, simple git-aware prompt
-- **FR-023**: All example configs MUST be commented out by default (user uncomments what they want)
-- **FR-024**: Each example config MUST have inline comment explaining what it does
-- **FR-025**: When user selects no (n), installer MUST generate minimal .zshrc with only Pulsar source and plugin array
-- **FR-026**: Installer MUST create timestamped backup of existing .zshrc before modifications
-- **FR-027**: Generated .zshrc MUST work immediately without requiring user edits (sensible plugin examples included)
+- **FR-021**: Generated .zshrc MUST be 50-80 lines total including Pulsar config and comprehensive commented examples
+- **FR-022**: Example configurations MUST be pure Zsh (no separate files, no bloat) and include: completion init, history settings, comprehensive key bindings, simple git-aware prompt
+- **FR-023**: Key bindings example MUST include navigation (Home/End, Ctrl+arrows for word movement, arrows for history search), editing (Delete, Ctrl+Delete for word kill, Ctrl+W for kill region, Ctrl+X Ctrl+E for command editing), history (Ctrl+R incremental search, PageUp/PageDown), and completion (Tab, Shift+Tab for reverse)
+- **FR-024**: History settings example MUST include HISTFILE location, HISTSIZE/SAVEHIST values, and useful options (SHARE_HISTORY, HIST_IGNORE_DUPS, etc.)
+- **FR-025**: All example configs MUST be commented out by default (user uncomments sections they want)
+- **FR-026**: Each example config section MUST have inline comment explaining what it does
+- **FR-027**: When user selects no (n), installer MUST generate minimal .zshrc with only Pulsar source and plugin array
+- **FR-028**: Installer MUST create timestamped backup of existing .zshrc before modifications
+- **FR-029**: Generated .zshrc MUST work immediately without requiring user edits (sensible plugin examples included)
 
 #### Legacy Deprecation
 
@@ -261,6 +263,6 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 - **SC-013**: OMZ/Prezto shortcuts expand correctly in all three loading modes
 - **SC-014**: Version pinning respects pins during updates (tags stay fixed, branches pull latest)
 - **SC-015**: Users can uninstall legacy config in 3 steps: remove old arrays, update to unified syntax, restart shell
-- **SC-016**: New users complete installation with defaults in under 2 minutes from curl to working shell
-- **SC-017**: Minimal .zshrc is 10-20 lines total (including Pulsar config and commented examples)
+- **SC-016**: New users complete installation with example configs in under 2 minutes from curl to working shell
+- **SC-017**: Generated .zshrc with examples is 50-80 lines total (comprehensive key bindings, history, completion, prompt)
 - **SC-018**: Generated .zshrc works immediately after install (sensible plugin examples, no user edits required)
