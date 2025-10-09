@@ -43,7 +43,25 @@ A user wants a single, clean array for all plugins using intuitive prefix syntax
 
 ---
 
-### User Story 3 - Debug Mode for Troubleshooting (Priority: P2)
+### User Story 3 - Minimal Zshrc Experience (Priority: P2)
+
+A new user wants the simplest possible .zshrc configuration that "just works" with sensible defaults. Like Oh-My-Zsh's 4-line setup, but for Pulsar.
+
+**Why this priority**: First impression matters. Lower barrier to entry means more adoption. Users can start minimal and add complexity later.
+
+**Independent Test**: User runs installer, chooses minimal setup, and ends up with a 5-10 line .zshrc that provides excellent defaults: completions, key bindings, and a clean prompt.
+
+**Acceptance Scenarios**:
+
+1. **Given** fresh Zsh install, **When** user runs install.sh, **Then** installer asks "Install with sensible defaults? (completions, keybinds, prompt) [Y/n]"
+2. **Given** user chooses default setup, **When** installer completes, **Then** .zshrc contains minimal config (~5-10 lines) that sources Pulsar and optional defaults
+3. **Given** minimal setup chosen, **When** new shell starts, **Then** user has working completions, useful key bindings (Ctrl+R, arrow keys), and a clean prompt
+4. **Given** user chooses custom setup, **When** installer completes, **Then** .zshrc contains only Pulsar source line (bare minimum for advanced users)
+5. **Given** minimal setup, **When** user wants to customize, **Then** clear comments in .zshrc explain what each default does and how to disable
+
+---
+
+### User Story 4 - Debug Mode for Troubleshooting (Priority: P2)
 
 A user encounters an issue and needs to see what Pulsar is doing. They set a global verbose flag and get detailed output for debugging.
 
@@ -61,7 +79,7 @@ A user encounters an issue and needs to see what Pulsar is doing. They set a glo
 
 ---
 
-### User Story 4 - Streamlined Codebase (Priority: P3)
+### User Story 5 - Streamlined Codebase (Priority: P3)
 
 A developer wants to understand and maintain Pulsar's codebase easily. The code should be clean, well-documented, and under 800 lines without sacrificing core functionality.
 
@@ -79,7 +97,7 @@ A developer wants to understand and maintain Pulsar's codebase easily. The code 
 
 ---
 
-### User Story 5 - Preserved Core Features (Priority: P1)
+### User Story 6 - Preserved Core Features (Priority: P1)
 
 A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to work identically: parallel cloning, OMZ/Prezto shortcuts, version pinning, self-update, and fast performance.
 
@@ -108,6 +126,10 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 - What happens when `PULSAR_VERBOSE` is changed mid-session (e.g., exported in current shell)?
 - How does system handle when user has manually compiled .zwc files that reference removed code?
 - What happens if user has custom wrapper functions around old PULSAR_PATH/PULSAR_FPATH?
+- How does installer handle when .zshrc already exists but doesn't source Pulsar?
+- What happens when user sources defaults bundle but doesn't have fpath set up properly?
+- How does defaults prompt handle non-interactive installation (e.g., CI/CD, scripted installs)?
+- What happens when user wants to upgrade from v0.6.0 with minimal setup but had custom config?
 
 ## Requirements *(mandatory)*
 
@@ -140,44 +162,57 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 - **FR-017**: System MUST support combining mode prefix with version pinning: `mode:user/repo@ref`
 - **FR-018**: System MUST support combining mode prefix with OMZ/Prezto shortcuts: `fpath:OMZP::git`
 
+#### Minimal Zshrc Experience
+
+- **FR-019**: Installer MUST prompt user: "Install with sensible defaults? (completions, keybinds, prompt) [Y/n]"
+- **FR-020**: When user selects defaults (Y), installer MUST generate minimal .zshrc with Pulsar source + optional defaults file
+- **FR-021**: Minimal .zshrc MUST be 5-10 lines total including comments
+- **FR-022**: System MUST provide optional defaults file (e.g., lib/pulsar-defaults.zsh) with: completion initialization, useful key bindings, minimal prompt setup
+- **FR-023**: Default key bindings MUST include: Ctrl+R (history search), arrow keys (history navigation), Tab (completion)
+- **FR-024**: Default prompt MUST be clean, single-line, showing: current directory, git branch (if in repo), exit status indicator
+- **FR-025**: Defaults file MUST be opt-in via: `source ${PULSAR_HOME:-.}/lib/pulsar-defaults.zsh` or similar pattern
+- **FR-026**: Each default in defaults file MUST have comment explaining what it does and how to disable
+- **FR-027**: When user selects custom (n), installer MUST generate bare-minimum .zshrc with only Pulsar source line
+- **FR-028**: Installer MUST create backup of existing .zshrc before modifications
+
 #### Legacy Deprecation
 
-- **FR-019**: System MUST remove support for separate PULSAR_PATH and PULSAR_FPATH arrays
-- **FR-020**: System MUST detect presence of PULSAR_PATH or PULSAR_FPATH in user config
-- **FR-021**: When legacy arrays detected, system MUST display one-time migration warning with example
-- **FR-022**: Migration warning MUST show exact replacement syntax for user's config
-- **FR-023**: System MUST NOT process legacy arrays (require explicit migration)
-- **FR-024**: System MUST remove VS Code shim support and related installation code
+- **FR-029**: System MUST remove support for separate PULSAR_PATH and PULSAR_FPATH arrays
+- **FR-030**: System MUST detect presence of PULSAR_PATH or PULSAR_FPATH in user config
+- **FR-031**: When legacy arrays detected, system MUST display one-time migration warning with example
+- **FR-032**: Migration warning MUST show exact replacement syntax for user's config
+- **FR-033**: System MUST NOT process legacy arrays (require explicit migration)
+- **FR-034**: System MUST remove VS Code shim support and related installation code
 
 #### Code Simplification
 
-- **FR-025**: Total line count of pulsar.zsh MUST be between 700-800 lines
-- **FR-026**: System MUST remove all VS Code integration code (shim installation, bootstrap)
-- **FR-027**: System MUST simplify or remove compilation support code (decision to be made during implementation)
-- **FR-028**: System MUST optimize entry point discovery to fewer steps while maintaining 95%+ success rate
-- **FR-029**: All removed features MUST be documented in CHANGELOG with clear migration notes
+- **FR-035**: Total line count of pulsar.zsh MUST be between 700-800 lines
+- **FR-036**: System MUST remove all VS Code integration code (shim installation, bootstrap)
+- **FR-037**: System MUST simplify or remove compilation support code (decision to be made during implementation)
+- **FR-038**: System MUST optimize entry point discovery to fewer steps while maintaining 95%+ success rate
+- **FR-039**: All removed features MUST be documented in CHANGELOG with clear migration notes
 
 #### Preserved Core Features
 
-- **FR-030**: System MUST maintain parallel cloning with same performance characteristics (3x+ speedup)
-- **FR-031**: System MUST maintain all Oh-My-Zsh shortcuts: OMZP::, OMZL::, OMZT::
-- **FR-032**: System MUST maintain Prezto shortcut: PREZ::
-- **FR-033**: System MUST maintain version pinning syntax: `repo@ref` for tags, branches, commits
-- **FR-034**: System MUST maintain self-update system with stable/edge/off channels
-- **FR-035**: System MUST maintain plugin-update command with bulk parallel updates
-- **FR-036**: System MUST maintain plugin-clone, plugin-load, plugin-update manual functions
-- **FR-037**: System MUST maintain automatic entry point discovery with same precedence rules
-- **FR-038**: System MUST maintain XDG Base Directory compliance for cache location
-- **FR-039**: System MUST maintain manager overhead under 50ms (excluding plugin sourcing)
-- **FR-040**: System MUST maintain support for 100+ plugins without performance degradation
+- **FR-040**: System MUST maintain parallel cloning with same performance characteristics (3x+ speedup)
+- **FR-041**: System MUST maintain all Oh-My-Zsh shortcuts: OMZP::, OMZL::, OMZT::
+- **FR-042**: System MUST maintain Prezto shortcut: PREZ::
+- **FR-043**: System MUST maintain version pinning syntax: `repo@ref` for tags, branches, commits
+- **FR-044**: System MUST maintain self-update system with stable/edge/off channels
+- **FR-045**: System MUST maintain plugin-update command with bulk parallel updates
+- **FR-046**: System MUST maintain plugin-clone, plugin-load, plugin-update manual functions
+- **FR-047**: System MUST maintain automatic entry point discovery with same precedence rules
+- **FR-048**: System MUST maintain XDG Base Directory compliance for cache location
+- **FR-049**: System MUST maintain manager overhead under 50ms (excluding plugin sourcing)
+- **FR-050**: System MUST maintain support for 100+ plugins without performance degradation
 
 #### User Experience
 
-- **FR-041**: System MUST display startup banner only when operations are performed (not on silent cached loads)
-- **FR-042**: Error messages MUST include plugin name, operation attempted, and suggested fix
-- **FR-043**: Update notifications MUST remain non-intrusive (single line, suppressible)
-- **FR-044**: System MUST maintain colored output for readability (when NO_COLOR not set)
-- **FR-045**: System MUST provide pulsar-doctor command for environment validation
+- **FR-051**: System MUST display startup banner only when operations are performed (not on silent cached loads)
+- **FR-052**: Error messages MUST include plugin name, operation attempted, and suggested fix
+- **FR-053**: Update notifications MUST remain non-intrusive (single line, suppressible)
+- **FR-054**: System MUST maintain colored output for readability (when NO_COLOR not set)
+- **FR-055**: System MUST provide pulsar-doctor command for environment validation
 
 ### Key Entities
 
@@ -202,6 +237,12 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
   - Trigger: Detection of PULSAR_PATH or PULSAR_FPATH in environment
   - Content: Clear before/after example showing unified array syntax
 
+- **Defaults Bundle**: Optional sensible defaults for new users
+  - Location: lib/pulsar-defaults.zsh (or similar)
+  - Contains: Completion init, key bindings, minimal prompt
+  - Opt-in: User sources it explicitly in .zshrc
+  - Modular: Each feature documented and independently disableable
+
 ## Success Criteria *(mandatory)*
 
 ### Measurable Outcomes
@@ -221,3 +262,6 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 - **SC-013**: OMZ/Prezto shortcuts expand correctly in all three loading modes
 - **SC-014**: Version pinning respects pins during updates (tags stay fixed, branches pull latest)
 - **SC-015**: Users can uninstall legacy config in 3 steps: remove old arrays, update to unified syntax, restart shell
+- **SC-016**: New users complete installation with defaults in under 2 minutes from curl to working shell
+- **SC-017**: Minimal .zshrc with defaults is 10 lines or fewer (excluding comments)
+- **SC-018**: Users with defaults bundle have working completions, history search, and git-aware prompt immediately after install
