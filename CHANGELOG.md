@@ -6,153 +6,64 @@ The format is based on Keep a Changelog and the project adheres to Semantic Vers
 
 ## [Unreleased]
 
+## [0.6.0] - 2025-10-08
+
 ### Added
+
 - **Oh-My-Zsh Shorthand Aliases**: New convenient syntax for OMZ plugins:
   - `OMZP::plugin-name` expands to `ohmyzsh/ohmyzsh/plugins/plugin-name`
   - `OMZL::lib-name` expands to `ohmyzsh/ohmyzsh/lib/lib-name`
   - `OMZT::theme-name` expands to `ohmyzsh/ohmyzsh/themes/theme-name`
 - **Automatic Completion Initialization**: Pulsar now auto-calls `compinit` when loading OMZ plugins to prevent `compdef: command not found` errors
 - **Enhanced Error Messages**: Better error reporting for failed clones, missing init files, and ref checkout failures
+- **Comprehensive OMZ/Prezto Documentation**: Added detailed guide at `docs/OMZ-PREZTO-GUIDE.md`
+- **New Test Coverage**: Added `tests/test-omz-plugins.md` for OMZ plugin integration testing
 
 ### Changed
+
 - **Improved Clone Messages**: Clone progress now shows full plugin path including subdirectories (e.g., "Cloning ohmyzsh/ohmyzsh/plugins/kubectl..." instead of just "Cloning ohmyzsh/ohmyzsh...")
 - **Better OMZ Plugin Discovery**: Plugin loading now properly handles subdirectory paths in OMZ repository structure
+- **Enhanced File Structure Detection**: Improved logic to distinguish between OMZ lib files, plugins, and themes
 
 ### Fixed
+
 - `compdef: command not found` errors when loading Oh-My-Zsh plugins
 - Confusing clone messages that didn't show subdirectory paths
 - Missing error handling for failed git operations
+- OMZ lib files not loading correctly (was looking for directories when files existed)
+- Idempotency issues with repository cloning
 
-## [1.0.0] - 2025-10-08
+## [0.5.0] - 2025-10-08
 
-### 🎉 Major Release: Production Ready
+### Added
 
-Pulsar v1.0.0 represents a complete, production-ready minimal Zsh plugin manager following the KISS principle. All core features are implemented, tested, and documented.
-
-#### ✨ Core Features
-
-- **Parallel Plugin Management**: Clone and update plugins concurrently for 3x speedup
+- **Parallel Plugin Management**: Clone and update plugins concurrently for improved performance
 - **Automatic Init Discovery**: 5-step precedence for finding plugin entry points
 - **Multiple Loading Modes**: Source, PATH, and fpath modes for different plugin types
-- **Oh-My-Zsh Compatibility**: Load OMZ plugins without installing oh-my-zsh
+- **Basic Oh-My-Zsh Compatibility**: Initial support for loading OMZ plugins
 - **Version Pinning**: Pin plugins to specific tags, branches, or commits
 - **Self-Update System**: Stable and unstable update channels with automatic notifications
-- **Compilation Support**: Bytecode compilation for faster subsequent loads
+- **Compilation Support**: Optional bytecode compilation via `zcompile` for faster loads
 - **VS Code Integration**: Automatic ZDOTDIR shim for VS Code terminal support
+- **Project Infrastructure**: EditorConfig, ShellCheck config, enhanced Makefile
+- **Comprehensive Documentation**: Updated README with Quick Start, configuration, examples
+- **Example Configurations**: Added declarative example and OMZ migration guide
+- **Test Suite**: 89 integration tests covering core functionality
+- **Benchmark Tool**: Added `pulsar-benchmark` function for performance measurement
+- **Diagnostic Tool**: Added `pulsar-doctor` for environment checks
 
-#### 📊 Performance & Quality
+### Changed
 
-- **<50ms Overhead**: Manager initialization stays under 50ms (excluding plugin sourcing)
-- **<1000 LOC**: Core implementation in ~800 lines (KISS principle maintained)
-- **89/89 Tests Passing**: 100% integration test coverage
-- **ShellCheck Clean**: No linting errors, idiomatic Zsh patterns throughout
-- **Constitutional Compliance**: Meets all 5 Constitution principles
+- **Code Quality**: Implemented ShellCheck compliance, no linting errors
+- **Error Handling**: Improved error messages and graceful degradation
+- **Performance**: Bounded parallelism respecting CPU cores, <50ms overhead target
+- **Installation**: Safe installation with timestamped backups and ZDOTDIR support
 
-#### 🎯 User Stories Implemented
+### Fixed
 
-1. **US1 - Basic Plugin Management** (P1): Clone, cache, load plugins automatically
-2. **US2 - Flexible Loading** (P2): Support PATH, fpath, and source modes
-3. **US3 - Updates & Compilation** (P3): Update all plugins, compile for performance
-4. **US4 - Manual Control** (P4): Direct function calls for power users
-5. **US5 - Self-Update** (P5): Keep Pulsar itself updated
-
-#### 📝 Functional Requirements Satisfied
-
-All 22 functional requirements (FR-001 through FR-022) fully implemented:
-
-- Parallel cloning (FR-001)
-- Init file discovery (FR-002)
-- Plugin caching (FR-003)
-- Declarative arrays (FR-004)
-- Manual functions (FR-005, FR-005a, FR-005b)
-- Version pinning (FR-006)
-- Bytecode compilation (FR-007)
-- Bulk updates (FR-008)
-- XDG compliance (FR-009)
-- ZDOTDIR support (FR-010)
-- Progress indicators (FR-011)
-- Zsh + git only (FR-012)
-- Update notifications (FR-013, FR-014)
-- Local plugin support (FR-015, FR-015a, FR-015b)
-- Colored output (FR-016, FR-017, FR-017a, FR-017b)
-- Safe installation (FR-018, FR-018a, FR-018b)
-- VS Code shim (FR-019)
-- Force re-clone (FR-020)
-- Error propagation (FR-021)
-- Help documentation (FR-022)
-
-#### 🚀 Success Criteria Met
-
-All 10 success criteria achieved:
-
-- ✅ 5-minute installation and setup
-- ✅ <50ms manager overhead
-- ✅ 10 plugins clone in <10 seconds
-- ✅ 100+ plugins supported
-- ✅ Updates complete in <30 seconds
-- ✅ 95% automatic init discovery
-- ✅ OMZ plugins work seamlessly
-- ✅ Copy-paste examples work
-- ✅ 3x parallel speedup vs serial
-- ✅ Simple 3-step uninstall
-
-#### 📚 Documentation
-
-- Comprehensive README with Quick Start, examples, and troubleshooting
-- Migration guide for oh-my-zsh users (`examples/omz_migration.zsh`)
-- Full feature specification in `specs/001-we-are-creating/`
-- Implementation completion report documenting all tasks
-- Known limitations documented for transparency
-
-#### 🔧 Technical Highlights
-
-- Pure Zsh implementation (5.8+ required)
-- XDG Base Directory compliance
-- Timestamped backups before modifications
-- Graceful error handling (warn and continue)
-- Bounded parallelism (respects CPU cores)
-- Git-only dependency (curl optional)
-- Update channels: stable/unstable/off
-- Benchmark function included (`pulsar-benchmark`)
-
-#### 🐛 Known Limitations
-
-10 edge cases documented as LOW-risk for v1.0 (see `KNOWN-LIMITATIONS.md`):
-
-1. Zero plugins (empty arrays)
-2. Special characters in plugin names
-3. Network timeout handling
-4. Circular symlinks
-5. Read-only filesystems
-6. Non-existent ZDOTDIR
-7. Git version compatibility
-8. Concurrent git operations
-9. Very large repositories (>1GB)
-10. Non-standard branch names
-
-All limitations are documented and assessed as LOW risk for typical usage.
-
-#### 🎓 Philosophy
-
-Pulsar follows the KISS (Keep It Simple, Stupid) principle:
-
-- **Minimal**: No external runtimes (Python, Ruby, Node.js)
-- **Fast**: Parallel operations, compiled bytecode support
-- **Simple**: Single-file core, easy to understand
-- **Reliable**: Extensive testing, graceful degradation
-- **Transparent**: Clear error messages, diagnostic tools
-
-#### 🙏 Acknowledgments
-
-Inspired by [mattmc3/zsh_unplugged](https://github.com/mattmc3/zsh_unplugged) and the vibrant Zsh plugin ecosystem.
-
-### Breaking Changes
-
-None. Pulsar v1.0.0 maintains backward compatibility with v0.x configurations.
-
-### Migration from v0.x
-
-No action required. Existing configurations continue to work. New features are opt-in.
+- Various edge cases in plugin loading and initialization
+- ZDOTDIR handling in VS Code terminal
+- Git operations error handling
 
 ## [0.4.0] - 2025-10-07
 
@@ -213,7 +124,9 @@ No action required. Existing configurations continue to work. New features are o
 
 - Initial Pulsar extraction and documentation.
 
-[Unreleased]: https://github.com/astrosteveo/pulsar/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/astrosteveo/pulsar/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/astrosteveo/pulsar/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/astrosteveo/pulsar/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/astrosteveo/pulsar/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/astrosteveo/pulsar/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/astrosteveo/pulsar/compare/v0.2.0...v0.3.0
