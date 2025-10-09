@@ -168,7 +168,7 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 - **FR-020**: When user selects yes (Y), installer MUST generate .zshrc with Pulsar source + commented OMZ library suggestions
 - **FR-021**: Generated .zshrc MUST be 30-50 lines total including Pulsar config and commented OMZ lib examples
 - **FR-022**: Example configuration MUST show how to load OMZ libraries (OMZL::history, OMZL::key-bindings, OMZL::completion, OMZL::theme-and-appearance) as commented entries in PULSAR_PLUGINS array
-- **FR-023**: Template MUST include popular OMZ lib choices with brief description of what each provides (e.g., "OMZL::key-bindings # Comprehensive key bindings (arrows, Ctrl+R, etc.)")
+- **FR-023**: Template MUST include popular OMZ lib choices with succinct descriptions explaining what each provides (e.g., "OMZL::key-bindings # Navigation (Home/End, Ctrl+arrows), history search (Ctrl+R, arrows), editing (Ctrl+W)")
 - **FR-024**: Template MUST include link to full OMZ lib list: <https://github.com/ohmyzsh/ohmyzsh/tree/master/lib>
 - **FR-025**: Template MUST provide simple custom alternative (basic completion, history, key bindings, prompt) for users who prefer not using OMZ libs
 - **FR-026**: All example configs MUST be commented out by default (user uncomments what they want)

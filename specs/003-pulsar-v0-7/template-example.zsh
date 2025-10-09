@@ -16,22 +16,26 @@ source ~/.config/zsh/lib/pulsar.zsh
 # Pulsar supports loading OMZ libs directly! Just uncomment the ones you want.
 # Full list: https://github.com/ohmyzsh/ohmyzsh/tree/master/lib
 #
-# Popular choices:
+# Popular choices (recommended starter pack):
 
 # PULSAR_PLUGINS+=(
-#   OMZL::history                # History configuration (HIST_* options)
-#   OMZL::key-bindings          # Comprehensive key bindings (arrows, Ctrl+R, etc.)
-#   OMZL::completion            # Advanced completion system
-#   OMZL::theme-and-appearance  # Prompt and color configurations
-#   OMZL::directories           # Directory navigation aliases (cd shortcuts)
-#   OMZL::git                   # Git helper functions
+#   OMZL::history                # Persistent history with SHARE_HISTORY, deduplication, timestamps
+#   OMZL::key-bindings          # Navigation (Home/End, Ctrl+arrows), history search (Ctrl+R, arrows), editing (Ctrl+W)
+#   OMZL::completion            # Smart tab completion with menu selection, case-insensitive matching
+#   OMZL::theme-and-appearance  # Color support, prompt helpers, LS_COLORS configuration
+#   OMZL::directories           # Quick directory switching (dirs, pushd/popd stack, auto-cd)
+#   OMZL::git                   # Git aliases and helper functions (git_current_branch, etc.)
 # )
 
-# Or add specific OMZ libs you need:
-# OMZL::clipboard              # Cross-platform clipboard helpers
-# OMZL::grep                   # Grep aliases with color
-# OMZL::spectrum               # 256-color support
-# OMZL::termsupport            # Terminal title management
+# Additional useful libs (pick what you need):
+# OMZL::clipboard              # Clipboard integration (clipcopy, clippaste) for Linux/macOS/WSL
+# OMZL::grep                   # Colorized grep with GREP_COLOR, excludes .git directories
+# OMZL::spectrum               # 256-color palette support ($FG[color], $BG[color] variables)
+# OMZL::termsupport            # Dynamic terminal titles showing current directory and command
+# OMZL::functions              # Utility functions (take, extract, etc.)
+# OMZL::compfix                # Fix insecure completion directories automatically
+# OMZL::correction             # Spell correction for commands (suggests alternatives)
+# OMZL::misc                   # Miscellaneous settings (URL quoting, safe rm/cp/mv)
 
 # =============================================================================
 # === OR: Quick Custom Setup (if you prefer not using OMZ libs) ===
