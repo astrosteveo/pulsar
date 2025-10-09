@@ -1,18 +1,16 @@
 <!--
 Sync Impact Report - Constitution Update
 =========================================
-Version change: INITIAL → 1.0.0
-Modified principles: N/A (initial version)
+Version change: 1.1.0 → 1.2.0
+Modified principles: Added Principle VII - Semantic Versioning
 Added sections:
-  - Core Principles (5 principles)
-  - Development Workflow
-  - Governance
+  - Principle VII with SemVer requirement and rationale
+  - Amendment history entry for v1.2.0
 Removed sections: N/A
-Templates requiring updates:
-  ✅ plan-template.md - Updated Constitution Check section
-  ✅ spec-template.md - Aligned with quality standards
-  ✅ tasks-template.md - Reflects branch workflow and testing discipline
-Follow-up TODOs: None
+Templates requiring updates: None
+Follow-up TODOs:
+  - Ensure all future releases follow SemVer strictly
+  - Create git tags for releases: v0.5.0, v0.6.0
 =========================================
 -->
 
@@ -108,6 +106,22 @@ Follow-up TODOs: None
 
 **Rationale**: The specs/ directory is the source of truth for what the software should do, not a journal of the development process. Polluting it with status reports makes it harder to find the actual specification and violates separation of concerns. Tasks.md already provides the authoritative status through checkbox completion.
 
+### VII. Semantic Versioning (NON-NEGOTIABLE)
+
+**This project MUST adhere to the [Semantic Versioning Specification (SemVer)](https://semver.org).**
+
+- Version numbers MUST follow the format MAJOR.MINOR.PATCH (e.g., 0.5.2, 1.3.0)
+- MAJOR version MUST be incremented for incompatible API changes or breaking changes to user interfaces
+- MINOR version MUST be incremented when adding functionality in a backward-compatible manner
+- PATCH version MUST be incremented for backward-compatible bug fixes
+- Pre-1.0.0 versions (0.y.z) indicate development/beta status and MAY introduce breaking changes in MINOR versions
+- Version 1.0.0 defines the public API and signals production readiness
+- Version numbers MUST NOT be inflated or skipped for marketing purposes
+- CHANGELOG.md MUST document all releases with clear categorization of changes (Added, Changed, Deprecated, Removed, Fixed, Security)
+- Git tags MUST be created for all releases in the format `vMAJOR.MINOR.PATCH`
+
+**Rationale**: Semantic Versioning provides a clear contract with users about the nature of changes in each release. It enables users to understand upgrade risk, manage dependencies effectively, and trust the project's stability promises. Consistent versioning discipline prevents confusion and builds confidence in the project's maturity.
+
 ## Development Workflow
 
 ### Branch Management
@@ -177,6 +191,19 @@ This constitution is a living document. As the project evolves, principles may b
 
 ## Amendment History
 
+### Version 1.2.0 - 2025-10-08
+
+**Added**: Principle VII - Semantic Versioning
+
+**Rationale**: After experiencing version number inflation (jumping to v1.0.0/v1.1.0 prematurely), the need for explicit SemVer adherence became clear. This principle establishes version numbering discipline, prevents marketing-driven version inflation, and creates a clear contract with users about the nature of changes in each release.
+
+**Impact**:
+
+- All releases MUST follow SemVer strictly
+- Pre-1.0.0 development acknowledged in versioning strategy
+- CHANGELOG.md structure already compliant with SemVer expectations
+- Git tags required for all releases
+
 ### Version 1.1.0 - 2025-10-08
 
 **Added**: Principle VI - Specification Discipline
@@ -191,4 +218,4 @@ This constitution is a living document. As the project evolves, principles may b
 
 ---
 
-**Version**: 1.1.0 | **Ratified**: 2025-10-07 | **Last Amended**: 2025-10-08
+**Version**: 1.2.0 | **Ratified**: 2025-10-07 | **Last Amended**: 2025-10-08
