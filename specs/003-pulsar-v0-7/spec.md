@@ -127,9 +127,9 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 - How does system handle when user has manually compiled .zwc files that reference removed code?
 - What happens if user has custom wrapper functions around old PULSAR_PATH/PULSAR_FPATH?
 - How does installer handle when .zshrc already exists but doesn't source Pulsar?
-- What happens when user sources defaults bundle but doesn't have fpath set up properly?
-- How does defaults prompt handle non-interactive installation (e.g., CI/CD, scripted installs)?
-- What happens when user wants to upgrade from v0.6.0 with minimal setup but had custom config?
+- How does example configs prompt handle non-interactive installation (e.g., CI/CD, scripted installs)?
+- What happens when user wants to upgrade from v0.6.0 but already has custom history/completion/prompt config?
+- What happens if user uncomments prompt example but their terminal doesn't support color codes?
 
 ## Requirements *(mandatory)*
 
@@ -164,16 +164,15 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 
 #### Minimal Zshrc Experience
 
-- **FR-019**: Installer MUST prompt user: "Install with sensible defaults? (completions, keybinds, prompt) [Y/n]"
-- **FR-020**: When user selects defaults (Y), installer MUST generate minimal .zshrc with Pulsar source + optional defaults file
-- **FR-021**: Minimal .zshrc MUST be 5-10 lines total including comments
-- **FR-022**: System MUST provide optional defaults file (e.g., lib/pulsar-defaults.zsh) with: completion initialization, useful key bindings, minimal prompt setup
-- **FR-023**: Default key bindings MUST include: Ctrl+R (history search), arrow keys (history navigation), Tab (completion)
-- **FR-024**: Default prompt MUST be clean, single-line, showing: current directory, git branch (if in repo), exit status indicator
-- **FR-025**: Defaults file MUST be opt-in via: `source ${PULSAR_HOME:-.}/lib/pulsar-defaults.zsh` or similar pattern
-- **FR-026**: Each default in defaults file MUST have comment explaining what it does and how to disable
-- **FR-027**: When user selects custom (n), installer MUST generate bare-minimum .zshrc with only Pulsar source line
-- **FR-028**: Installer MUST create backup of existing .zshrc before modifications
+- **FR-019**: Installer MUST prompt user: "Include example configs? (completions, history, keybinds, prompt) [Y/n]"
+- **FR-020**: When user selects yes (Y), installer MUST generate .zshrc with Pulsar source + commented example configurations
+- **FR-021**: Generated .zshrc MUST be 10-20 lines total including Pulsar config and commented examples
+- **FR-022**: Example configurations MUST be pure Zsh (no separate files, no bloat) and include: completion init, history settings, key bindings, simple git-aware prompt
+- **FR-023**: All example configs MUST be commented out by default (user uncomments what they want)
+- **FR-024**: Each example config MUST have inline comment explaining what it does
+- **FR-025**: When user selects no (n), installer MUST generate minimal .zshrc with only Pulsar source and plugin array
+- **FR-026**: Installer MUST create timestamped backup of existing .zshrc before modifications
+- **FR-027**: Generated .zshrc MUST work immediately without requiring user edits (sensible plugin examples included)
 
 #### Legacy Deprecation
 
@@ -237,11 +236,11 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
   - Trigger: Detection of PULSAR_PATH or PULSAR_FPATH in environment
   - Content: Clear before/after example showing unified array syntax
 
-- **Defaults Bundle**: Optional sensible defaults for new users
-  - Location: lib/pulsar-defaults.zsh (or similar)
-  - Contains: Completion init, key bindings, minimal prompt
-  - Opt-in: User sources it explicitly in .zshrc
-  - Modular: Each feature documented and independently disableable
+- **Example Configurations**: Commented Zsh snippets in generated .zshrc
+  - Type: Pure Zsh code (no separate files)
+  - Content: Completion init, history settings, key bindings, git-aware prompt
+  - Opt-in: User uncomments desired features
+  - Documentation: Inline comments explaining each setting
 
 ## Success Criteria *(mandatory)*
 
@@ -263,5 +262,5 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 - **SC-014**: Version pinning respects pins during updates (tags stay fixed, branches pull latest)
 - **SC-015**: Users can uninstall legacy config in 3 steps: remove old arrays, update to unified syntax, restart shell
 - **SC-016**: New users complete installation with defaults in under 2 minutes from curl to working shell
-- **SC-017**: Minimal .zshrc with defaults is 10 lines or fewer (excluding comments)
-- **SC-018**: Users with defaults bundle have working completions, history search, and git-aware prompt immediately after install
+- **SC-017**: Minimal .zshrc is 10-20 lines total (including Pulsar config and commented examples)
+- **SC-018**: Generated .zshrc works immediately after install (sensible plugin examples, no user edits required)
