@@ -10,79 +10,48 @@ PULSAR_PLUGINS=(
 source ~/.config/zsh/lib/pulsar.zsh
 
 # =============================================================================
-# === OPTIONAL: Sensible Defaults (uncomment sections you want) ===
+# === OPTIONAL: Oh-My-Zsh Libraries (uncomment what you want) ===
+# =============================================================================
+#
+# Pulsar supports loading OMZ libs directly! Just uncomment the ones you want.
+# Full list: https://github.com/ohmyzsh/ohmyzsh/tree/master/lib
+#
+# Popular choices:
+
+# PULSAR_PLUGINS+=(
+#   OMZL::history                # History configuration (HIST_* options)
+#   OMZL::key-bindings          # Comprehensive key bindings (arrows, Ctrl+R, etc.)
+#   OMZL::completion            # Advanced completion system
+#   OMZL::theme-and-appearance  # Prompt and color configurations
+#   OMZL::directories           # Directory navigation aliases (cd shortcuts)
+#   OMZL::git                   # Git helper functions
+# )
+
+# Or add specific OMZ libs you need:
+# OMZL::clipboard              # Cross-platform clipboard helpers
+# OMZL::grep                   # Grep aliases with color
+# OMZL::spectrum               # 256-color support
+# OMZL::termsupport            # Terminal title management
+
+# =============================================================================
+# === OR: Quick Custom Setup (if you prefer not using OMZ libs) ===
 # =============================================================================
 
-# --- Completion System ---
-# Enables advanced tab completion with menu selection
+# # Basic completion
 # autoload -Uz compinit && compinit
-# zstyle ':completion:*' menu select
-# zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}'  # Case-insensitive
-
-# --- History Configuration ---
-# Persistent command history with sharing across sessions
+#
+# # Basic history
 # HISTFILE=~/.zsh_history
 # HISTSIZE=10000
 # SAVEHIST=10000
-# setopt SHARE_HISTORY              # Share history across all sessions
-# setopt HIST_IGNORE_DUPS           # Don't record duplicate entries
-# setopt HIST_IGNORE_SPACE          # Don't record commands starting with space
-# setopt HIST_REDUCE_BLANKS         # Remove superfluous blanks
-
-# --- Key Bindings ---
-# Navigation and editing shortcuts (emacs-style by default)
-
-# Use emacs key bindings (comment out for vi mode: bindkey -v)
-# bindkey -e
-
-# History search with up/down arrows (type partial command then press arrow)
-# autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
-# zle -N up-line-or-beginning-search
-# zle -N down-line-or-beginning-search
-# bindkey '^[[A' up-line-or-beginning-search      # Up arrow
-# bindkey '^[[B' down-line-or-beginning-search    # Down arrow
-# bindkey '^P' up-line-or-beginning-search        # Ctrl+P
-# bindkey '^N' down-line-or-beginning-search      # Ctrl+N
-
-# Line navigation
-# bindkey '^A' beginning-of-line                  # Ctrl+A - beginning of line
-# bindkey '^E' end-of-line                        # Ctrl+E - end of line
-# [[ -n "${terminfo[khome]}" ]] && bindkey "${terminfo[khome]}" beginning-of-line  # Home
-# [[ -n "${terminfo[kend]}" ]] && bindkey "${terminfo[kend]}" end-of-line          # End
-
-# Word movement
-# bindkey '^[[1;5C' forward-word                  # Ctrl+Right - forward word
-# bindkey '^[[1;5D' backward-word                 # Ctrl+Left - backward word
-
-# Deletion
-# bindkey '^?' backward-delete-char               # Backspace
-# bindkey '^[[3~' delete-char                     # Delete
-# bindkey '^[[3;5~' kill-word                     # Ctrl+Delete - delete word forward
-# bindkey '^W' backward-kill-word                 # Ctrl+W - delete word backward
-
-# History search
-# bindkey '^R' history-incremental-search-backward  # Ctrl+R - search history backward
-
-# Command line editing in $EDITOR
-# autoload -Uz edit-command-line
-# zle -N edit-command-line
-# bindkey '^X^E' edit-command-line                # Ctrl+X Ctrl+E - edit in editor
-
-# Completion navigation
-# bindkey '^I' complete-word                      # Tab - complete
-# [[ -n "${terminfo[kcbt]}" ]] && bindkey "${terminfo[kcbt]}" reverse-menu-complete  # Shift+Tab
-
-# Misc
-# bindkey ' ' magic-space                         # Space - expand history (!!, !$, etc)
-
-# --- Git-Aware Prompt ---
-# Simple, clean prompt showing directory and git branch
-# autoload -Uz vcs_info
-# precmd() { vcs_info }
-# setopt PROMPT_SUBST
-# PROMPT='%F{blue}%~%f %F{green}${vcs_info_msg_0_}%f%(?.%F{green}.%F{red})%#%f '
-# zstyle ':vcs_info:git:*' formats '(%b)'
-# zstyle ':vcs_info:*' enable git
+# setopt SHARE_HISTORY HIST_IGNORE_DUPS
+#
+# # Basic key bindings
+# bindkey -e                                      # Emacs mode
+# bindkey '^R' history-incremental-search-backward  # Ctrl+R search
+#
+# # Simple prompt
+# PROMPT='%F{blue}%~%f %# '
 
 # =============================================================================
 # For more customization, see: https://zsh.sourceforge.io/Doc/Release/

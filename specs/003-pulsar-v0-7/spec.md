@@ -164,14 +164,14 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 
 #### Minimal Zshrc Experience
 
-- **FR-019**: Installer MUST prompt user: "Include example configs? (completions, history, keybinds, prompt) [Y/n]"
-- **FR-020**: When user selects yes (Y), installer MUST generate .zshrc with Pulsar source + commented example configurations
-- **FR-021**: Generated .zshrc MUST be 50-80 lines total including Pulsar config and comprehensive commented examples
-- **FR-022**: Example configurations MUST be pure Zsh (no separate files, no bloat) and include: completion init, history settings, comprehensive key bindings, simple git-aware prompt
-- **FR-023**: Key bindings example MUST include navigation (Home/End, Ctrl+arrows for word movement, arrows for history search), editing (Delete, Ctrl+Delete for word kill, Ctrl+W for kill region, Ctrl+X Ctrl+E for command editing), history (Ctrl+R incremental search, PageUp/PageDown), and completion (Tab, Shift+Tab for reverse)
-- **FR-024**: History settings example MUST include HISTFILE location, HISTSIZE/SAVEHIST values, and useful options (SHARE_HISTORY, HIST_IGNORE_DUPS, etc.)
-- **FR-025**: All example configs MUST be commented out by default (user uncomments sections they want)
-- **FR-026**: Each example config section MUST have inline comment explaining what it does
+- **FR-019**: Installer MUST prompt user: "Include example configs? (OMZ libs, custom setup) [Y/n]"
+- **FR-020**: When user selects yes (Y), installer MUST generate .zshrc with Pulsar source + commented OMZ library suggestions
+- **FR-021**: Generated .zshrc MUST be 30-50 lines total including Pulsar config and commented OMZ lib examples
+- **FR-022**: Example configuration MUST show how to load OMZ libraries (OMZL::history, OMZL::key-bindings, OMZL::completion, OMZL::theme-and-appearance) as commented entries in PULSAR_PLUGINS array
+- **FR-023**: Template MUST include popular OMZ lib choices with brief description of what each provides (e.g., "OMZL::key-bindings # Comprehensive key bindings (arrows, Ctrl+R, etc.)")
+- **FR-024**: Template MUST include link to full OMZ lib list: <https://github.com/ohmyzsh/ohmyzsh/tree/master/lib>
+- **FR-025**: Template MUST provide simple custom alternative (basic completion, history, key bindings, prompt) for users who prefer not using OMZ libs
+- **FR-026**: All example configs MUST be commented out by default (user uncomments what they want)
 - **FR-027**: When user selects no (n), installer MUST generate minimal .zshrc with only Pulsar source and plugin array
 - **FR-028**: Installer MUST create timestamped backup of existing .zshrc before modifications
 - **FR-029**: Generated .zshrc MUST work immediately without requiring user edits (sensible plugin examples included)
@@ -238,11 +238,12 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
   - Trigger: Detection of PULSAR_PATH or PULSAR_FPATH in environment
   - Content: Clear before/after example showing unified array syntax
 
-- **Example Configurations**: Commented Zsh snippets in generated .zshrc
-  - Type: Pure Zsh code (no separate files)
-  - Content: Completion init, history settings, key bindings, git-aware prompt
-  - Opt-in: User uncomments desired features
-  - Documentation: Inline comments explaining each setting
+- **Example Configurations**: Commented OMZ library suggestions in generated .zshrc
+  - Type: OMZL:: entries in PULSAR_PLUGINS array (leverages existing OMZ libs)
+  - Content: Suggestions for history, key-bindings, completion, theme-and-appearance
+  - Alternative: Simple custom setup (basic completion/history/keybinds/prompt) for non-OMZ users
+  - Opt-in: User uncomments desired OMZ libs or custom setup
+  - Documentation: Inline comments explaining what each lib provides
 
 ## Success Criteria *(mandatory)*
 
@@ -264,5 +265,5 @@ A user upgrades from v0.6.0 to v0.7.0 and expects all essential functionality to
 - **SC-014**: Version pinning respects pins during updates (tags stay fixed, branches pull latest)
 - **SC-015**: Users can uninstall legacy config in 3 steps: remove old arrays, update to unified syntax, restart shell
 - **SC-016**: New users complete installation with example configs in under 2 minutes from curl to working shell
-- **SC-017**: Generated .zshrc with examples is 50-80 lines total (comprehensive key bindings, history, completion, prompt)
+- **SC-017**: Generated .zshrc with examples is 30-50 lines total (commented OMZ lib suggestions + simple custom alternative)
 - **SC-018**: Generated .zshrc works immediately after install (sensible plugin examples, no user edits required)
