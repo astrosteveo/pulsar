@@ -7,6 +7,8 @@ Auto-generated context for GitHub Copilot. **Last updated**: 2025-10-08
 **Pulsar** is a minimal Zsh plugin manager following the KISS (Keep It Simple, Stupid) principle. Pure Zsh implementation with no external runtime dependencies.
 
 ## Active Technologies
+- Zsh 5.8+ (pure shell script, no external runtime dependencies) + git (required), curl (optional for release notes), python3 (optional for VS Code integration) (002-pulsar-minimal-zsh)
+- File system (XDG_CACHE_HOME for plugin cache, state files for update tracking) (002-pulsar-minimal-zsh)
 
 - **Language**: Zsh 5.8+
 - **Testing**: Native Zsh test framework (clitest-style)
@@ -103,11 +105,10 @@ All development MUST comply with `.specify/memory/constitution.md`:
 7. **Semantic Versioning** - Strict SemVer adherence, CHANGELOG.md required
 
 ## Recent Changes
+- 002-pulsar-minimal-zsh: Added Zsh 5.8+ (pure shell script, no external runtime dependencies) + git (required), curl (optional for release notes), python3 (optional for VS Code integration)
 
 - **v0.6.0 (2025-10-08)**: Added Oh-My-Zsh shorthand aliases (OMZP::, OMZL::, OMZT::), automatic completion initialization, enhanced error messages, comprehensive OMZ/Prezto documentation
 - **v0.5.0 (2025-10-08)**: Core implementation - parallel plugin management, automatic init discovery, multiple loading modes, version pinning, self-update system, compilation support, VS Code integration
-- **Constitution v1.2.0 (2025-10-08)**: Added Principle VII (Semantic Versioning) to prevent version inflation
-- **Constitution v1.1.0 (2025-10-08)**: Added Principle VI (Specification Discipline) to keep specs/ directory clean
 
 ## Development Workflow
 
