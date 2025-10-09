@@ -67,6 +67,21 @@
 - [ ] Performance testing strategy defined
 - [ ] Scalability considerations documented (handle 100+ plugins)
 
+### Specification Discipline
+
+- [ ] Only canonical spec documents in specs/ directory (spec.md, plan.md, tasks.md, data-model.md, research.md, quickstart.md, checklists/)
+- [ ] No completion reports or status summaries planned for specs/
+- [ ] Implementation tracking via tasks.md checkboxes only
+- [ ] Process documentation (if any) planned for docs/ or .github/, not specs/
+
+### Semantic Versioning
+
+- [ ] Version numbering follows MAJOR.MINOR.PATCH format
+- [ ] Pre-1.0.0 status acknowledged (breaking changes in MINOR allowed)
+- [ ] Version 1.0.0 criteria defined for production readiness
+- [ ] CHANGELOG.md structure follows SemVer categories (Added, Changed, Fixed, etc.)
+- [ ] Git tag strategy documented for releases
+
 ## Project Structure
 
 ### Documentation (this feature)
